@@ -152,7 +152,7 @@ public class MenuScreen extends ScreenAdapter{
                     //Launches the game
                     if(finalI == 0){
                         //music.stop();
-                        tsr.setScreen(new MainScreen(tsr));
+                        tsr.setScreen(new IntroScreen(tsr));
                     }
                     //Turns on the credits menu
                     else{

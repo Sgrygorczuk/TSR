@@ -11,9 +11,11 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
@@ -23,6 +25,9 @@ import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.packt.tsr.background.BuddySprite;
 import com.packt.tsr.background.TrainingPanel;
+
+import java.util.Arrays;
+import java.util.Vector;
 
 
 class MainScreen extends ScreenAdapter {
@@ -40,15 +45,10 @@ class MainScreen extends ScreenAdapter {
     private Camera camera;				 //The camera viewing the viewport
     private SpriteBatch batch = new SpriteBatch();			 //Batch that holds all of the textures
 
-    private ShapeRenderer shapeRendererEnemy;       //Creates the wire frames for enemies
-    private ShapeRenderer shapeRendererUser;        //Creates the wire frame for user
-    private ShapeRenderer shapeRendererBackground;  //Creates the wire frame for background objects
-    private ShapeRenderer shapeRendererCollectible; //Creates wireframe for collectibles
-
     //The buttons that will be used in the menu
     private Stage menuStage;
     private ImageButton[] menuButtons;
-    private ImageButton[] clickerButtons = new ImageButton[5];
+    private ImageButton[] clickerButtons = new ImageButton[9];
 
     //Game object that holds the settings
     private TSR tsr;
@@ -56,12 +56,8 @@ class MainScreen extends ScreenAdapter {
     //Music that will start
     private Music music;
 
-
     //Font used for the user interaction
     private BitmapFont bitmapFont = new BitmapFont();
-    //Font for viewing phone stats in developer mode
-    private BitmapFont bitmapFontDeveloper = new BitmapFont();
-
 
     //Textures
     private Texture popUpTexture;                       //Pop up menu to show menu buttons and Help screen
@@ -75,18 +71,35 @@ class MainScreen extends ScreenAdapter {
     private TrainingPanel[] trainingPanels = new TrainingPanel[5];
     private BuddySprite buddySprite;
 
+    private Vector<Sprite> willCoins = new Vector<>();
+    private Vector<Float> willAlpha = new Vector<>();
+    private Vector<Sprite> stamCoins = new Vector<>();
+    private Vector<Float> stamAlpha = new Vector<>();
+    private Vector<Sprite> strCoins = new Vector<>();
+    private Vector<Float> strAlpha = new Vector<>();
+    private Vector<Sprite> agilCoins = new Vector<>();
+    private Vector<Float> agilAlpha = new Vector<>();
+    private Vector<Sprite> techCoins = new Vector<>();
+    private Vector<Float> techAlpha = new Vector<>();
+
 
     //Names of buttons
     private String[] menuButtonText = new String[]{"Main Menu", "Restart", "Help", "Sound Off", "Sound On"};
 
     //Flags
     private int[] currencies = new int[]{0,0,0,0,0};
+    private int[] autoCoins = new int[]{0,0,0,0};
     private boolean[] currenciesUnlock = new boolean[]{false, false, false, false};
-    private boolean developerMode = false;      //Developer mode shows hit boxes and phone data
+    private boolean[] currenciesTextUnlock = new boolean[]{true, false, false, false};
+    private boolean techFlag = false;
     private boolean pausedFlag = false;         //Stops the game from updating
     private boolean endFlag = false;            //Tells us game has been lost
     private float sfxVolume = 1f;               //Current sfx volume
     private boolean helpFlag = false;           //Tells us if help flag is on or off
+
+    //Timing variable used to stop the abbot bounce effect from stacking
+    private static final float AUTO_TIME = 1F;
+    private float autoTimer = AUTO_TIME;
 
     /*
     Input: SpaceHops
@@ -116,7 +129,6 @@ class MainScreen extends ScreenAdapter {
         showObjects();      //Sets up player and font
         showButtons();      //Sets up the buttons
         //showMusic();        //Sets up music
-        if(developerMode){showRender();}    //If in developer mode sets up the redners
     }
 
     /*
@@ -140,8 +152,8 @@ class MainScreen extends ScreenAdapter {
         popUpTexture = new Texture(Gdx.files.internal("UI/PopUpBoarder.png"));
         gameScreenTexture = new Texture(Gdx.files.internal("Sprites/GameScreen.png"));
 
-        Texture buttonTexturePath = new Texture(Gdx.files.internal("Sprites/ButtonSpriteSheet.png"));
-        buttonSpriteSheet = new TextureRegion(buttonTexturePath).split(86, 46); //Breaks down the texture into tiles
+        Texture buttonTexturePath = new Texture(Gdx.files.internal("Sprites/GameButtonSpriteSheet.png"));
+        buttonSpriteSheet = new TextureRegion(buttonTexturePath).split(98, 40); //Breaks down the texture into tiles
 
 
         Texture symbolTexturePath = new Texture(Gdx.files.internal("Sprites/SymbolSpriteSheet.png"));
@@ -178,11 +190,18 @@ class MainScreen extends ScreenAdapter {
     Purpose: Sets up the button in the menu
     */
     private void setClickerButtons(){
-        //Sets up the position of the buttons in a square 2x2
-        for(int i = 0; i < 5; i ++){
-            clickerButtons[i] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[2][0]));
-            clickerButtons[i].setPosition(WORLD_WIDTH - buttonSpriteSheet[0][0].getRegionWidth(), 250 - i * (buttonSpriteSheet[0][0].getRegionHeight() + 5));
+        for(int i = 0; i < 9; i ++){
+            if(i % 2 == 0) {
+                clickerButtons[i] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[0][1]));
+            }
+            else{
+                clickerButtons[i] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[1][0]), new TextureRegionDrawable(buttonSpriteSheet[1][1]));
+            }
+            clickerButtons[i].setPosition(WORLD_WIDTH-buttonSpriteSheet[0][0].getRegionWidth(), WORLD_HEIGHT - 35 * (i + 1));
+            clickerButtons[i].setWidth(100);
+            clickerButtons[i].setHeight(35);
             menuStage.addActor(clickerButtons[i]);
+            if(i > 0){clickerButtons[i].setVisible(false);}
 
             //Sets up each buttons function
             final int finalI = i;
@@ -192,23 +211,54 @@ class MainScreen extends ScreenAdapter {
                     super.tap(event, x, y, count, button);
                     //Returns to the main menu
                     if (finalI == 0) {
-                        currencies[finalI]++;
+                        currencies[0]++;
+                        createWillCoin(0);
                     }
-                    else if (finalI == 1){
-                        currenciesUnlock[0] = true;
-                        currencies[finalI]++;
+                    else if(finalI == 1){
+                        autoCoins[0]++;
+                        currencies[4] = currencies[4] - 10;
                     }
                     else if (finalI == 2){
-                        currenciesUnlock[1] = true;
-                        currencies[finalI]++;
+                        currenciesUnlock[0] = true;
+                        currenciesTextUnlock[3] = true;
+                        techFlag = true;
+                        createWillCoin(1);
+                        currencies[0] = currencies[0] - 5;
+                        currencies[1]++;
                     }
-                    else if (finalI == 3){
-                        currenciesUnlock[2] = true;
-                        currencies[finalI]++;
+                    else if(finalI == 3){
+                        autoCoins[1]++;
+                        currencies[4] = currencies[4] - 20;
                     }
-                    else{
+                    else if (finalI == 4){
+                        createWillCoin(2);
+                        currencies[0] = currencies[0] - 10;
+                        currencies[1] = currencies[1] - 5;
                         currenciesUnlock[3] = true;
-                        currencies[finalI]++;
+                        currenciesTextUnlock[2] = true;
+                        currencies[2]++;
+                    }
+                    else if(finalI == 5){
+                        autoCoins[2]++;
+                        currencies[4] = currencies[4] - 30;
+                    }
+                    else if (finalI == 6){
+                        createWillCoin(3);
+                        currenciesUnlock[2] = true;
+                        currencies[1] = currencies[2] - 5;
+                        currencies[2] = currencies[2] - 5;
+                        currencies[3]++;
+                    }
+                    else if(finalI == 7){
+                        autoCoins[3]++;
+                        currencies[4] = currencies[4] - 40;
+                    }
+                    else {
+                        createWillCoin(4);
+                        currenciesUnlock[1] = true;
+                        currenciesTextUnlock[2] = true;
+                        currencies[0] = currencies[0] - 10;
+                        currencies[4]++;
                     }
 
                 }
@@ -222,13 +272,11 @@ class MainScreen extends ScreenAdapter {
     Purpose: Sets up button used to open the menu
     */
     private void setUpOpenMenuButton(){
-        //Set up the texture
-        Texture menuButtonTexturePath = new Texture(Gdx.files.internal("UI/MenuButton.png"));
-        TextureRegion[][] buttonSpriteSheet = new TextureRegion(menuButtonTexturePath).split(45, 44); //Breaks down the texture into tiles
-
         //Place the button
         menuButtons[0] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[0][1]));
-        menuButtons[0].setPosition(430 - buttonSpriteSheet[0][0].getRegionWidth()/2f, WORLD_HEIGHT - 10 - buttonSpriteSheet[0][0].getRegionHeight());
+        menuButtons[0].setPosition(0, WORLD_HEIGHT - 36);
+        menuButtons[0].setHeight(40);
+        menuButtons[0].setWidth(90);
         menuStage.addActor(menuButtons[0]);
 
         //If button has not been clicked turn on menu and pause game,
@@ -372,7 +420,7 @@ class MainScreen extends ScreenAdapter {
     */
     private void showObjects(){
         //if(dogFighter.getAssetManager().isLoaded("Fonts/GreedyGobo.fnt")){bitmapFont = dogFighter.getAssetManager().get("Fonts/GreedyGobo.fnt");}
-        bitmapFont.getData().setScale(0.6f);
+        bitmapFont.getData().setScale(3f);
 
         trainingPanels[0] = new TrainingPanel(20, 40, trainingPanelsTextures, true);
         trainingPanels[1] = new TrainingPanel(230, 130, trainingPanelsTextures, false);
@@ -408,29 +456,6 @@ class MainScreen extends ScreenAdapter {
     /*
     Input: Void
     Output: Void
-    Purpose: Sets up the different renders to draw objects in wireframe
-    */
-    private void showRender(){
-        //Enemy
-        shapeRendererEnemy = new ShapeRenderer();
-        shapeRendererEnemy.setColor(Color.RED);
-
-        //User
-        shapeRendererUser = new ShapeRenderer();
-        shapeRendererUser.setColor(Color.GREEN);
-
-        //Background
-        shapeRendererBackground = new ShapeRenderer();
-        shapeRendererBackground.setColor(Color.WHITE);
-
-        //Intractable
-        shapeRendererCollectible = new ShapeRenderer();
-        shapeRendererCollectible.setColor(Color.BLUE);
-    }
-
-    /*
-    Input: Void
-    Output: Void
     Purpose: Draws all of the variables on the screen
     */
     @Override
@@ -438,61 +463,8 @@ class MainScreen extends ScreenAdapter {
         if(!pausedFlag) { update(delta); }
         clearScreen();
         draw();
-        if (developerMode) {
-            renderEnemy();
-            renderUser();
-            renderCollectible();
-            renderBackground();
-        }
     }
 
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Draws the enemy/obstacle wireframe
-    */
-    private void renderEnemy(){
-        shapeRendererEnemy.setProjectionMatrix(camera.projection);      		                 //Screen set up camera
-        shapeRendererEnemy.setTransformMatrix(camera.view);            			                 //Screen set up camera
-        shapeRendererEnemy.begin(ShapeRenderer.ShapeType.Line);         		                 //Sets up to draw lines
-        shapeRendererEnemy.end();
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Draws user wireframe
-    */
-    private void renderUser(){
-        shapeRendererUser.setProjectionMatrix(camera.projection);    //Screen set up camera
-        shapeRendererUser.setTransformMatrix(camera.view);           //Screen set up camera
-        shapeRendererUser.begin(ShapeRenderer.ShapeType.Line);       //Sets up to draw lines
-        shapeRendererUser.end();
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Draws the background object and UI wireframes
-    */
-    private void renderBackground(){
-        shapeRendererBackground.setProjectionMatrix(camera.projection);                 //Screen set up camera
-        shapeRendererBackground.setTransformMatrix(camera.view);                        //Screen set up camera
-        shapeRendererBackground.begin(ShapeRenderer.ShapeType.Line);                    //Starts to draw
-        shapeRendererBackground.end();
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Draws wireframe of the collectibles -- needs to be redone along with collectible objects
-    */
-    private void renderCollectible(){
-        shapeRendererCollectible.setProjectionMatrix(camera.projection);
-        shapeRendererCollectible.setTransformMatrix(camera.view);
-        shapeRendererCollectible.begin(ShapeRenderer.ShapeType.Line);
-        shapeRendererCollectible.end();
-    }
 
     /*
     Input: Void
@@ -504,7 +476,244 @@ class MainScreen extends ScreenAdapter {
             trainingPanels[i].update(delta);
             buddySprite.update(delta, i);
         }
+        updateCoinsMaster();
+        updateAutoTimer(delta);
+        updateGameButtonVisibility();
     }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Counts when the abbot SFX can be played again
+    */
+    private void updateAutoTimer(float delta) {
+        autoTimer -= delta;
+        if (autoTimer <= 0) {
+            autoTimer = AUTO_TIME;
+            for (int j = 0; j < autoCoins.length; j++) {
+                for (int i = 0; i < autoCoins[j]; i++){
+                    createWillCoin(j);
+                    currencies[j]++;
+                }
+            }
+        }
+    }
+
+    private void updateGameButtonVisibility(){
+        if(currencies[0] >= 5){ clickerButtons[2].setVisible(true);}
+        else{ clickerButtons[2].setVisible(false);}
+
+        if(currencies[0] >= 10 && currencies[1] >= 5){ clickerButtons[4].setVisible(true);}
+        else{ clickerButtons[4].setVisible(false);}
+
+        if(currencies[1] >= 5 && currencies[2] >= 5){ clickerButtons[6].setVisible(true);}
+        else{ clickerButtons[6].setVisible(false);}
+
+
+        if(techFlag && currencies[0] >= 10){ clickerButtons[8].setVisible(true);}
+        else{ clickerButtons[8].setVisible(false);}
+
+        if(techFlag &&  currencies[4] >= 10){ clickerButtons[1].setVisible(true);}
+        else{ clickerButtons[1].setVisible(false);}
+
+        if(techFlag && currencies[4] >= 20){ clickerButtons[3].setVisible(true);}
+        else{ clickerButtons[3].setVisible(false);}
+
+        if(techFlag &&  currencies[4] >= 30){ clickerButtons[5].setVisible(true);}
+        else{ clickerButtons[5].setVisible(false);}
+
+        if(techFlag && currencies[4] >= 40){ clickerButtons[7].setVisible(true);}
+        else{ clickerButtons[7].setVisible(false);}
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Central function for updating the knights
+    */
+    private void updateCoinsMaster(){
+        updateCoins();
+        removeCoins();
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Central function for updating the knights
+    */
+    private void createWillCoin(int vectorChoice){
+        switch (vectorChoice){
+            case 0:{
+                Sprite coin = new Sprite(symbolTextures[0][0]);
+                coin.setAlpha(1);
+                float x = MathUtils.random(160, 190);
+                float y = MathUtils.random(190, 210);
+                coin.setPosition(x, y);
+                willCoins.add(coin);
+                willAlpha.add(1f);
+                break;
+            }
+            case 1:{
+                Sprite coin = new Sprite(symbolTextures[0][1]);
+                coin.setAlpha(1);
+                float x = MathUtils.random(70, 90);
+                float y = MathUtils.random(110, 130);
+                coin.setPosition(x, y);
+                stamCoins.add(coin);
+                stamAlpha.add(1f);
+                break;
+            }
+            case 2:{
+                Sprite coin = new Sprite(symbolTextures[0][2]);
+                coin.setAlpha(1);
+                float x = MathUtils.random(260, 290);
+                float y = MathUtils.random(120, 140);
+                coin.setPosition(x, y);
+                strCoins.add(coin);
+                strAlpha.add(1f);
+                break;
+            }
+            case 3:{
+                Sprite coin = new Sprite(symbolTextures[0][3]);
+                coin.setAlpha(1);
+                float x = MathUtils.random(70, 90);
+                float y = MathUtils.random(250, 270);
+                coin.setPosition(x, y);
+                agilCoins.add(coin);
+                agilAlpha.add(1f);
+                break;
+            }
+            case 4:{
+                Sprite coin = new Sprite(symbolTextures[0][4]);
+                coin.setAlpha(1);
+                float x = MathUtils.random(260, 290);
+                float y = MathUtils.random(230, 250);
+                coin.setPosition(x, y);
+                techCoins.add(coin);
+                techAlpha.add(1f);
+                break;
+            }
+            default:
+                throw new IllegalStateException("Unexpected value: " + vectorChoice);
+        }
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose:
+    */
+    private void updateCoins(){
+        for (int i = 0; i < willCoins.size(); i++){
+            willCoins.get(i).setPosition(willCoins.get(i).getX(), willCoins.get(i).getY() + 1);
+            willAlpha.set(i, willAlpha.get(i) - 0.01f);
+            willCoins.get(i).setAlpha(willAlpha.get(i));
+        }
+
+        for (int i = 0; i < stamCoins.size(); i++){
+            stamCoins.get(i).setPosition(stamCoins.get(i).getX(), stamCoins.get(i).getY() + 1);
+            stamAlpha.set(i, stamAlpha.get(i) - 0.01f);
+            stamCoins.get(i).setAlpha(stamAlpha.get(i));
+        }
+
+        for (int i = 0; i < strCoins.size(); i++){
+            strCoins.get(i).setPosition(strCoins.get(i).getX(), strCoins.get(i).getY() + 1);
+            strAlpha.set(i, strAlpha.get(i) - 0.01f);
+            strCoins.get(i).setAlpha(strAlpha.get(i));
+        }
+
+        for (int i = 0; i < agilCoins.size(); i++){
+            agilCoins.get(i).setPosition(agilCoins.get(i).getX(), agilCoins.get(i).getY() + 1);
+            agilAlpha.set(i, agilAlpha.get(i) - 0.01f);
+            agilCoins.get(i).setAlpha(agilAlpha.get(i));
+        }
+
+        for (int i = 0; i < techCoins.size(); i++){
+            techCoins.get(i).setPosition(techCoins.get(i).getX(), techCoins.get(i).getY() + 1);
+            techAlpha.set(i, techAlpha.get(i) - 0.01f);
+            techCoins.get(i).setAlpha(techAlpha.get(i));
+        }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if the knight left screen and removes him or has interacted with player
+    */
+    private void removeCoins(){
+        Vector<Sprite> removedWillCoin = new Vector<>();
+        Vector<Float> removedWillAlpha = new Vector<>();
+        for (int i = 0; i < willCoins.size(); i++){
+            if(willAlpha.get(i) < 0){
+                removedWillCoin.add(willCoins.get(i));
+                removedWillAlpha.add(willAlpha.get(i));
+            }
+        }
+
+        for(int i = 0; i < removedWillAlpha.size(); i++){
+                willAlpha.remove(removedWillAlpha.get(i));
+                willCoins.remove(removedWillCoin.get(i));
+        }
+
+        Vector<Sprite> removedStamCoin = new Vector<>();
+        Vector<Float> removedStamAlpha = new Vector<>();
+        for (int i = 0; i <  stamCoins.size(); i++){
+            if( stamAlpha.get(i) < 0){
+                removedStamCoin.add(stamCoins.get(i));
+                removedStamAlpha.add(stamAlpha.get(i));
+            }
+        }
+
+        for(int i = 0; i < removedStamAlpha.size(); i++){
+            stamAlpha.remove(removedStamAlpha.get(i));
+            stamCoins.remove(removedStamCoin.get(i));
+        }
+
+
+        Vector<Sprite> removedStrCoin = new Vector<>();
+        Vector<Float> removedStrAlpha = new Vector<>();
+        for (int i = 0; i <  strCoins.size(); i++){
+            if( strAlpha.get(i) < 0){
+                removedStrCoin.add(strCoins.get(i));
+                removedStrAlpha.add(strAlpha.get(i));
+            }
+        }
+
+        for(int i = 0; i < removedStrAlpha.size(); i++){
+            strAlpha.remove(removedStrAlpha.get(i));
+            strCoins.remove(removedStrCoin.get(i));
+        }
+
+        Vector<Sprite> removedAgilCoin = new Vector<>();
+        Vector<Float> removedAgilAlpha = new Vector<>();
+        for (int i = 0; i <  agilCoins.size(); i++){
+            if( agilAlpha.get(i) < 0){
+                removedAgilCoin.add(agilCoins.get(i));
+                removedAgilAlpha.add(agilAlpha.get(i));
+            }
+        }
+
+        for(int i = 0; i < removedAgilAlpha.size(); i++){
+            agilAlpha.remove(removedAgilAlpha.get(i));
+            agilCoins.remove(removedAgilCoin.get(i));
+        }
+
+
+        Vector<Sprite> removedTechCoin = new Vector<>();
+        Vector<Float> removedTechAlpha = new Vector<>();
+        for (int i = 0; i <  techCoins.size(); i++){
+            if( techAlpha.get(i) < 0){
+                removedTechCoin.add(techCoins.get(i));
+                removedTechAlpha.add(techAlpha.get(i));
+            }
+        }
+
+        for(int i = 0; i < removedTechAlpha.size(); i++){
+            techAlpha.remove(removedTechAlpha.get(i));
+            techCoins.remove(removedTechCoin.get(i));
+        }
+    }
+
 
     /*
     Input: Void
@@ -540,8 +749,12 @@ class MainScreen extends ScreenAdapter {
                 }
             }
         }
+        for(Sprite sprite : willCoins){sprite.draw(batch);}
+        for(Sprite sprite : stamCoins){sprite.draw(batch);}
+        for(Sprite sprite : strCoins){sprite.draw(batch);}
+        for(Sprite sprite : agilCoins){sprite.draw(batch);}
+        for(Sprite sprite : techCoins){sprite.draw(batch);}
         //If dev mode is on draw hit boxes and phone stats
-        if(developerMode){drawDeveloperInfo();}
         batch.end();
 
         //Draw open menu button
@@ -564,38 +777,116 @@ class MainScreen extends ScreenAdapter {
         batch.begin();
         //Draw the menu button text
         if(pausedFlag && !helpFlag){ drawButtonText();}
+        drawInGameButtonText();
         batch.end();
     }
 
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Draws the hit boxes and the phone stats
-    */
-    private void drawDeveloperInfo(){
-        //Batch setting up texture
-        int x = (int) Gdx.input.getAccelerometerX();
-        int y = (int) Gdx.input.getAccelerometerY();
-        int z = (int) Gdx.input.getAccelerometerZ();
-        centerText(bitmapFontDeveloper, "X: " + x, 40, 300);
-        centerText(bitmapFontDeveloper, "Y: " + y, 40, 280);
-        centerText(bitmapFontDeveloper, "Z: " + z, 40, 260);
-        if(Math.abs(x) > Math.abs(y) && Math.abs(x) > Math.abs(z)){ centerText(bitmapFontDeveloper, "Surface X", 40, 240); }
-        else if(Math.abs(y) > Math.abs(x) && Math.abs(y) > Math.abs(z)){ centerText(bitmapFontDeveloper, "Surface Y", 40, 240); }
-        else if(Math.abs(z) > Math.abs(x) && Math.abs(z) > Math.abs(y)){ centerText(bitmapFontDeveloper, "Surface Z", 40, 240); }
-    }
 
     private void drawCurrencies(){
         for(int i = 0; i < 5; i++){
-            batch.draw(symbolTextures[0][i], 20 + i * 70, 297);
-            centerText(bitmapFont, "" + currencies[i], 35 + i * 70, 301.5f);
+            batch.draw(symbolTextures[0][i], 100 + i * 50, 297);
+            bitmapFont.getData().setScale(0.8f);
+            centerText(bitmapFont, "" + currencies[i], 125 + i * 50, 301.5f);
         }
     }
 
     private void drawOffButtons(){
-        for(int i = 0; i < 5; i++){
-            batch.draw(buttonSpriteSheet[2][0], WORLD_WIDTH - buttonSpriteSheet[0][0].getRegionWidth(), 250 - i * (buttonSpriteSheet[0][0].getRegionHeight() + 5));
+        for(int i = 0; i < 9; i++) {
+            if (i % 2 == 0) { batch.draw(buttonSpriteSheet[0][1], WORLD_WIDTH - 92, WORLD_HEIGHT - 35 * (i + 1), 88, 35); }
+            else { batch.draw(buttonSpriteSheet[1][1], WORLD_WIDTH - 92, WORLD_HEIGHT - 35 * (i + 1), 88, 35);} }
+    }
+
+    private void drawInGameButtonText(){
+        bitmapFont.setColor(Color.WHITE);
+        bitmapFont.getData().setScale(1f);
+        centerText(bitmapFont, "Menu", 44, WORLD_HEIGHT - 16);
+
+        bitmapFont.getData().setScale(0.8f);
+        centerText(bitmapFont, "Focus", WORLD_WIDTH-48, WORLD_HEIGHT - 12);
+        bitmapFont.getData().setScale(0.6f);
+        centerText(bitmapFont, "+", WORLD_WIDTH-53, WORLD_HEIGHT - 22);
+        batch.draw(symbolTextures[0][0], WORLD_WIDTH-48, WORLD_HEIGHT - 25f, 6, 6);
+
+        if(currenciesTextUnlock[0]) {
+            if (currencies[0] >= 5) { bitmapFont.setColor(Color.WHITE); }
+            else { bitmapFont.setColor(Color.GRAY); }
+            bitmapFont.getData().setScale(0.8f);
+            centerText(bitmapFont, "Jump", WORLD_WIDTH - 48, WORLD_HEIGHT - 82);
+            bitmapFont.getData().setScale(0.6f);
+            centerText(bitmapFont, "-5", WORLD_WIDTH - 66, WORLD_HEIGHT - 92);
+            batch.draw(symbolTextures[0][0], WORLD_WIDTH - 61, WORLD_HEIGHT - 95, 6, 6);
+            centerText(bitmapFont, "+", WORLD_WIDTH - 43, WORLD_HEIGHT - 92);
+            batch.draw(symbolTextures[0][1], WORLD_WIDTH - 38, WORLD_HEIGHT - 95, 6, 6);
         }
+
+        if(currenciesTextUnlock[3]) {
+            if (currencies[0] >= 10 && currencies[1] >= 5) { bitmapFont.setColor(Color.WHITE); }
+            else { bitmapFont.setColor(Color.GRAY); }
+            bitmapFont.getData().setScale(0.8f);
+            centerText(bitmapFont, "Punch", WORLD_WIDTH - 48, WORLD_HEIGHT - 152);
+            bitmapFont.getData().setScale(0.6f);
+            centerText(bitmapFont, "-10", WORLD_WIDTH - 76, WORLD_HEIGHT - 162);
+            batch.draw(symbolTextures[0][0], WORLD_WIDTH - 66, WORLD_HEIGHT - 165, 6, 6);
+            centerText(bitmapFont, "-5", WORLD_WIDTH - 51, WORLD_HEIGHT - 162);
+            batch.draw(symbolTextures[0][1], WORLD_WIDTH - 46, WORLD_HEIGHT - 165, 6, 6);
+            centerText(bitmapFont, "+", WORLD_WIDTH - 28, WORLD_HEIGHT - 162);
+            batch.draw(symbolTextures[0][2], WORLD_WIDTH - 23, WORLD_HEIGHT - 165, 6, 6);
+        }
+
+        if(currenciesTextUnlock[2]) {
+            if (currencies[1] >= 5 && currencies[2] >= 5) { bitmapFont.setColor(Color.WHITE); }
+            else { bitmapFont.setColor(Color.GRAY); }
+            bitmapFont.getData().setScale(0.8f);
+            centerText(bitmapFont, "Balance", WORLD_WIDTH - 48, WORLD_HEIGHT - 222);
+            bitmapFont.getData().setScale(0.6f);
+            centerText(bitmapFont, "-5", WORLD_WIDTH - 76, WORLD_HEIGHT - 232);
+            batch.draw(symbolTextures[0][1], WORLD_WIDTH - 66, WORLD_HEIGHT - 235, 6, 6);
+            centerText(bitmapFont, "-5", WORLD_WIDTH - 51, WORLD_HEIGHT - 232);
+            batch.draw(symbolTextures[0][2], WORLD_WIDTH - 46, WORLD_HEIGHT - 235, 6, 6);
+            centerText(bitmapFont, "+", WORLD_WIDTH - 28, WORLD_HEIGHT - 232);
+            batch.draw(symbolTextures[0][3], WORLD_WIDTH - 23, WORLD_HEIGHT - 235, 6, 6);
+        }
+
+        if(currenciesTextUnlock[1]) {
+            if (techFlag && currencies[0] > 10) { bitmapFont.setColor(Color.WHITE); }
+            else { bitmapFont.setColor(Color.GRAY); }
+            bitmapFont.getData().setScale(0.8f);
+            centerText(bitmapFont, "Study", WORLD_WIDTH - 48, WORLD_HEIGHT - 292);
+            bitmapFont.getData().setScale(0.6f);
+            centerText(bitmapFont, "-10", WORLD_WIDTH - 66, WORLD_HEIGHT - 302);
+            batch.draw(symbolTextures[0][0], WORLD_WIDTH - 58, WORLD_HEIGHT - 305, 6, 6);
+            centerText(bitmapFont, "+", WORLD_WIDTH - 43, WORLD_HEIGHT - 302);
+            batch.draw(symbolTextures[0][4], WORLD_WIDTH - 38, WORLD_HEIGHT - 305, 6, 6);
+        }
+
+        if(techFlag){
+            if(currenciesUnlock[1]) {
+                if (currencies[4] > 10) { bitmapFont.setColor(Color.WHITE); }
+                else { bitmapFont.setColor(Color.GRAY); }
+                bitmapFont.getData().setScale(0.8f);
+                centerText(bitmapFont, "Auto-Focus", WORLD_WIDTH - 38, WORLD_HEIGHT - 48);
+                bitmapFont.getData().setScale(0.6f);
+                centerText(bitmapFont, "-10", WORLD_WIDTH - 66, WORLD_HEIGHT - 58);
+                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 58, WORLD_HEIGHT - 62, 6, 6);
+                centerText(bitmapFont, "+" + (autoCoins[0] + 1), WORLD_WIDTH - 45, WORLD_HEIGHT - 58);
+                batch.draw(symbolTextures[0][0], WORLD_WIDTH - 35, WORLD_HEIGHT - 62f, 6, 6);
+                centerText(bitmapFont, "/sec", WORLD_WIDTH - 20, WORLD_HEIGHT - 58);
+            }
+            if(currenciesUnlock[3]) {
+                if (currencies[4] > 10) { bitmapFont.setColor(Color.WHITE); }
+                else { bitmapFont.setColor(Color.GRAY); }
+                bitmapFont.getData().setScale(0.8f);
+                centerText(bitmapFont, "Auto-Jump", WORLD_WIDTH - 38, WORLD_HEIGHT - 118);
+                bitmapFont.getData().setScale(0.6f);
+                centerText(bitmapFont, "-20", WORLD_WIDTH - 66, WORLD_HEIGHT - 128);
+                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 58, WORLD_HEIGHT - 132, 6, 6);
+                centerText(bitmapFont, "+" + (autoCoins[1] + 1), WORLD_WIDTH - 45, WORLD_HEIGHT - 128);
+                batch.draw(symbolTextures[0][1], WORLD_WIDTH - 35, WORLD_HEIGHT - 132f, 6, 6);
+                centerText(bitmapFont, "/sec", WORLD_WIDTH - 20, WORLD_HEIGHT - 128);
+            }
+        }
+
+        bitmapFont.setColor(Color.WHITE);
     }
 
     /*
