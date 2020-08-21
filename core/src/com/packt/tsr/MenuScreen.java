@@ -152,6 +152,7 @@ public class MenuScreen extends ScreenAdapter{
                     //Launches the game
                     if(finalI == 0){
                         //music.stop();
+                        dispose();
                         tsr.setScreen(new IntroScreen(tsr));
                     }
                     //Turns on the credits menu
@@ -373,7 +374,6 @@ public class MenuScreen extends ScreenAdapter{
     @Override
     public void dispose() {
         menuStage.dispose();
-        music.dispose();
 
         popUpTexture.dispose();
     }

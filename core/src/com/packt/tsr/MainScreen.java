@@ -47,7 +47,7 @@ class MainScreen extends ScreenAdapter {
 
     //The buttons that will be used in the menu
     private Stage menuStage;
-    private ImageButton[] menuButtons;
+    private ImageButton[] menuButtons = new ImageButton[8];
     private ImageButton[] clickerButtons = new ImageButton[9];
 
     //Game object that holds the settings
@@ -62,6 +62,7 @@ class MainScreen extends ScreenAdapter {
     //Textures
     private Texture popUpTexture;                       //Pop up menu to show menu buttons and Help screen
     private Texture gameScreenTexture;
+    private Texture progressTexture;
     private TextureRegion[][] symbolTextures;
     private TextureRegion[][] trainingPanelsTextures;
     private TextureRegion[][] buddyTextures;
@@ -91,6 +92,7 @@ class MainScreen extends ScreenAdapter {
     private int[] autoCoins = new int[]{0,0,0,0};
     private boolean[] currenciesUnlock = new boolean[]{false, false, false, false};
     private boolean[] currenciesTextUnlock = new boolean[]{true, false, false, false};
+    private int endGameState = 0; //0 Will - 1 Stamina - 2 Strength - 3 Agility
     private boolean techFlag = false;
     private boolean pausedFlag = false;         //Stops the game from updating
     private boolean endFlag = false;            //Tells us game has been lost
@@ -151,6 +153,7 @@ class MainScreen extends ScreenAdapter {
     private void showTextures(){
         popUpTexture = new Texture(Gdx.files.internal("UI/PopUpBoarder.png"));
         gameScreenTexture = new Texture(Gdx.files.internal("Sprites/GameScreen.png"));
+        progressTexture = new Texture(Gdx.files.internal("Sprites/LifeBarBlood.png"));
 
         Texture buttonTexturePath = new Texture(Gdx.files.internal("Sprites/GameButtonSpriteSheet.png"));
         buttonSpriteSheet = new TextureRegion(buttonTexturePath).split(98, 40); //Breaks down the texture into tiles
@@ -175,8 +178,6 @@ class MainScreen extends ScreenAdapter {
     private void showButtons(){
         menuStage = new Stage(new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT));
         Gdx.input.setInputProcessor(menuStage); //Gives controll to the stage for clicking on buttons
-        //Sets up 6 Buttons
-        menuButtons = new ImageButton[6];
 
         setClickerButtons();
         setUpOpenMenuButton();  //Sets up button used to open the menu
@@ -221,14 +222,14 @@ class MainScreen extends ScreenAdapter {
                     else if (finalI == 2){
                         currenciesUnlock[0] = true;
                         currenciesTextUnlock[3] = true;
-                        techFlag = true;
                         createWillCoin(1);
                         currencies[0] = currencies[0] - 5;
                         currencies[1]++;
                     }
                     else if(finalI == 3){
                         autoCoins[1]++;
-                        currencies[4] = currencies[4] - 20;
+                        currencies[4] = currencies[4] - 15;
+                        currencies[1] = currencies[1] - 5;
                     }
                     else if (finalI == 4){
                         createWillCoin(2);
@@ -240,7 +241,8 @@ class MainScreen extends ScreenAdapter {
                     }
                     else if(finalI == 5){
                         autoCoins[2]++;
-                        currencies[4] = currencies[4] - 30;
+                        currencies[4] = currencies[4] - 20;
+                        currencies[2] = currencies[2] - 5;
                     }
                     else if (finalI == 6){
                         createWillCoin(3);
@@ -251,7 +253,8 @@ class MainScreen extends ScreenAdapter {
                     }
                     else if(finalI == 7){
                         autoCoins[3]++;
-                        currencies[4] = currencies[4] - 40;
+                        currencies[4] = currencies[4] - 25;
+                        currencies[3] = currencies[3] - 5;
                     }
                     else {
                         createWillCoin(4);
@@ -259,6 +262,7 @@ class MainScreen extends ScreenAdapter {
                         currenciesTextUnlock[2] = true;
                         currencies[0] = currencies[0] - 10;
                         currencies[4]++;
+                        techFlag = true;
                     }
 
                 }
@@ -293,6 +297,61 @@ class MainScreen extends ScreenAdapter {
                         else{menuButtons[i].setVisible(false);}               //Turns off 1-5 buttons
                     }
                 }
+            }
+        });
+
+        menuButtons[6] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[0][1]));
+        menuButtons[6].setPosition(0, 0);
+        menuStage.addActor(menuButtons[6]);
+        menuButtons[6].setVisible(false);
+
+        //If button has not been clicked turn on menu and pause game,
+        //If the menu is up turn it off and un-pause the game
+        menuButtons[6].addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                switch (endGameState){
+                    case 0:{
+                        currencies[0] = currencies[0] - 1000;
+                        endGameState = 1;
+                        break;
+                    }
+                    case 1:{
+                        currencies[1] = currencies[1] - 1000;
+                        endGameState = 2;
+                        break;
+                    }
+                    case 2:{
+                        currencies[2] = currencies[2] - 1000;
+                        endGameState = 3;
+                        break;
+                    }
+                    case 3:{
+                        currencies[3] = currencies[3] - 1000;
+                        endGameState = 4;
+                        break;
+                    }
+                }
+            }
+        });
+
+        Texture fightButtonPath = new Texture(Gdx.files.internal("Sprites/FightButton.png"));
+        final TextureRegion[][] fightButtonSpriteSheet = new TextureRegion(fightButtonPath).split(258, 138); //Breaks down the texture into tiles
+
+        menuButtons[7] =  new ImageButton(new TextureRegionDrawable(fightButtonSpriteSheet[0][0]), new TextureRegionDrawable(fightButtonSpriteSheet[1][0]));
+        menuButtons[7].setPosition(200 - fightButtonSpriteSheet[0][0].getRegionWidth()/2f, WORLD_HEIGHT/2f - fightButtonSpriteSheet[0][0].getRegionHeight()/2f);
+        menuStage.addActor(menuButtons[7]);
+        menuButtons[7].setVisible(false);
+
+        //If button has not been clicked turn on menu and pause game,
+        //If the menu is up turn it off and un-pause the game
+        menuButtons[7].addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                dispose();
+                tsr.setScreen(new FightScreen(tsr));
             }
         });
     }
@@ -500,6 +559,12 @@ class MainScreen extends ScreenAdapter {
     }
 
     private void updateGameButtonVisibility(){
+        if(currencies[endGameState] >= 1000){ menuButtons[6].setVisible(true);}
+        else{ clickerButtons[6].setVisible(false);}
+
+        if(endGameState == 4){ menuButtons[7].setVisible(true);}
+        else{ clickerButtons[7].setVisible(false);}
+
         if(currencies[0] >= 5){ clickerButtons[2].setVisible(true);}
         else{ clickerButtons[2].setVisible(false);}
 
@@ -510,19 +575,19 @@ class MainScreen extends ScreenAdapter {
         else{ clickerButtons[6].setVisible(false);}
 
 
-        if(techFlag && currencies[0] >= 10){ clickerButtons[8].setVisible(true);}
+        if(currenciesTextUnlock[3] && currencies[0] >= 10){ clickerButtons[8].setVisible(true);}
         else{ clickerButtons[8].setVisible(false);}
 
-        if(techFlag &&  currencies[4] >= 10){ clickerButtons[1].setVisible(true);}
+        if(techFlag &&  currenciesUnlock[1] && currencies[4] >= 10){ clickerButtons[1].setVisible(true);}
         else{ clickerButtons[1].setVisible(false);}
 
-        if(techFlag && currencies[4] >= 20){ clickerButtons[3].setVisible(true);}
+        if(techFlag && currenciesUnlock[1] &&  currencies[4] >= 15 && currencies[1] >= 5){ clickerButtons[3].setVisible(true);}
         else{ clickerButtons[3].setVisible(false);}
 
-        if(techFlag &&  currencies[4] >= 30){ clickerButtons[5].setVisible(true);}
+        if(techFlag && currenciesUnlock[3] &&  currencies[4] >= 29 && currencies[2] >= 5){ clickerButtons[5].setVisible(true);}
         else{ clickerButtons[5].setVisible(false);}
 
-        if(techFlag && currencies[4] >= 40){ clickerButtons[7].setVisible(true);}
+        if(techFlag && currenciesUnlock[2] && currencies[4] >= 25 && currencies[3] >= 5){ clickerButtons[7].setVisible(true);}
         else{ clickerButtons[7].setVisible(false);}
     }
 
@@ -732,6 +797,7 @@ class MainScreen extends ScreenAdapter {
         batch.setProjectionMatrix(camera.projection);
         batch.setTransformMatrix(camera.view);
         batch.begin();
+        batch.draw(progressTexture, 30, 0, progressTexture.getWidth()*endGameState/4f, WORLD_HEIGHT);
         batch.draw(gameScreenTexture, 0 ,0);
         drawCurrencies();
         trainingPanels[2].draw(batch);
@@ -778,6 +844,7 @@ class MainScreen extends ScreenAdapter {
         //Draw the menu button text
         if(pausedFlag && !helpFlag){ drawButtonText();}
         drawInGameButtonText();
+        drawEndGameButton();
         batch.end();
     }
 
@@ -791,9 +858,28 @@ class MainScreen extends ScreenAdapter {
     }
 
     private void drawOffButtons(){
+        batch.draw(buttonSpriteSheet[0][1], 0, 0);
         for(int i = 0; i < 9; i++) {
             if (i % 2 == 0) { batch.draw(buttonSpriteSheet[0][1], WORLD_WIDTH - 92, WORLD_HEIGHT - 35 * (i + 1), 88, 35); }
-            else { batch.draw(buttonSpriteSheet[1][1], WORLD_WIDTH - 92, WORLD_HEIGHT - 35 * (i + 1), 88, 35);} }
+            else if(techFlag){ batch.draw(buttonSpriteSheet[1][1], WORLD_WIDTH - 92, WORLD_HEIGHT - 35 * (i + 1), 88, 35);} }
+    }
+
+    private void drawEndGameButton(){
+        bitmapFont.setColor(Color.WHITE);
+        bitmapFont.getData().setScale(0.9f);
+        centerText(bitmapFont, "Strike", 46,  28);
+        bitmapFont.getData().setScale(0.8f);
+        if(endGameState < 4) {
+            centerText(bitmapFont, "-1000", 38, 14);
+            batch.draw(symbolTextures[0][endGameState], 58, 8, 11, 11);
+        }
+
+        if(endGameState == 4){
+            bitmapFont.setColor(Color.RED);
+            bitmapFont.getData().setScale(1.5f);
+            centerText(bitmapFont, "FIGHT", 200, WORLD_HEIGHT/2f);
+        }
+        bitmapFont.setColor(Color.WHITE);
     }
 
     private void drawInGameButtonText(){
@@ -847,8 +933,8 @@ class MainScreen extends ScreenAdapter {
             batch.draw(symbolTextures[0][3], WORLD_WIDTH - 23, WORLD_HEIGHT - 235, 6, 6);
         }
 
-        if(currenciesTextUnlock[1]) {
-            if (techFlag && currencies[0] > 10) { bitmapFont.setColor(Color.WHITE); }
+        if(currenciesTextUnlock[3]) {
+            if (currencies[0] >= 10) { bitmapFont.setColor(Color.WHITE); }
             else { bitmapFont.setColor(Color.GRAY); }
             bitmapFont.getData().setScale(0.8f);
             centerText(bitmapFont, "Study", WORLD_WIDTH - 48, WORLD_HEIGHT - 292);
@@ -861,28 +947,59 @@ class MainScreen extends ScreenAdapter {
 
         if(techFlag){
             if(currenciesUnlock[1]) {
-                if (currencies[4] > 10) { bitmapFont.setColor(Color.WHITE); }
+                if (currencies[4] >= 10) { bitmapFont.setColor(Color.WHITE); }
                 else { bitmapFont.setColor(Color.GRAY); }
                 bitmapFont.getData().setScale(0.8f);
-                centerText(bitmapFont, "Auto-Focus", WORLD_WIDTH - 38, WORLD_HEIGHT - 48);
+                centerText(bitmapFont, "Auto-Focus", WORLD_WIDTH - 38, WORLD_HEIGHT - 46);
                 bitmapFont.getData().setScale(0.6f);
-                centerText(bitmapFont, "-10", WORLD_WIDTH - 66, WORLD_HEIGHT - 58);
-                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 58, WORLD_HEIGHT - 62, 6, 6);
-                centerText(bitmapFont, "+" + (autoCoins[0] + 1), WORLD_WIDTH - 45, WORLD_HEIGHT - 58);
-                batch.draw(symbolTextures[0][0], WORLD_WIDTH - 35, WORLD_HEIGHT - 62f, 6, 6);
-                centerText(bitmapFont, "/sec", WORLD_WIDTH - 20, WORLD_HEIGHT - 58);
+                centerText(bitmapFont, "-10", WORLD_WIDTH - 66, WORLD_HEIGHT - 60);
+                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 58, WORLD_HEIGHT - 64, 6, 6);
+                centerText(bitmapFont, "+" + (autoCoins[0] + 1), WORLD_WIDTH - 40, WORLD_HEIGHT - 60);
+                batch.draw(symbolTextures[0][0], WORLD_WIDTH - 32, WORLD_HEIGHT - 64f, 6, 6);
+                centerText(bitmapFont, "/sec", WORLD_WIDTH - 18, WORLD_HEIGHT - 60);
+
+                if (currencies[4] >= 15  && currencies[1] >= 5) { bitmapFont.setColor(Color.WHITE); }
+                else { bitmapFont.setColor(Color.GRAY); }
+                bitmapFont.getData().setScale(0.8f);
+                centerText(bitmapFont, "Auto-Jump", WORLD_WIDTH - 38, WORLD_HEIGHT - 116);
+                bitmapFont.getData().setScale(0.6f);
+                centerText(bitmapFont, "-15", WORLD_WIDTH - 86, WORLD_HEIGHT - 130);
+                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 78, WORLD_HEIGHT - 134, 6, 6);
+                centerText(bitmapFont, "-5", WORLD_WIDTH - 60, WORLD_HEIGHT - 130);
+                batch.draw(symbolTextures[0][1], WORLD_WIDTH - 54, WORLD_HEIGHT - 134, 6, 6);
+                centerText(bitmapFont, "+" + (autoCoins[1] + 1), WORLD_WIDTH - 40, WORLD_HEIGHT - 130);
+                batch.draw(symbolTextures[0][1], WORLD_WIDTH - 32, WORLD_HEIGHT - 134f, 6, 6);
+                centerText(bitmapFont, "/sec", WORLD_WIDTH - 18, WORLD_HEIGHT - 130);
             }
+
             if(currenciesUnlock[3]) {
-                if (currencies[4] > 10) { bitmapFont.setColor(Color.WHITE); }
+                if (currencies[4] >= 20 && currencies[2] >= 5) { bitmapFont.setColor(Color.WHITE); }
                 else { bitmapFont.setColor(Color.GRAY); }
                 bitmapFont.getData().setScale(0.8f);
-                centerText(bitmapFont, "Auto-Jump", WORLD_WIDTH - 38, WORLD_HEIGHT - 118);
+                centerText(bitmapFont, "Auto-Punch", WORLD_WIDTH - 38, WORLD_HEIGHT - 186);
                 bitmapFont.getData().setScale(0.6f);
-                centerText(bitmapFont, "-20", WORLD_WIDTH - 66, WORLD_HEIGHT - 128);
-                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 58, WORLD_HEIGHT - 132, 6, 6);
-                centerText(bitmapFont, "+" + (autoCoins[1] + 1), WORLD_WIDTH - 45, WORLD_HEIGHT - 128);
-                batch.draw(symbolTextures[0][1], WORLD_WIDTH - 35, WORLD_HEIGHT - 132f, 6, 6);
-                centerText(bitmapFont, "/sec", WORLD_WIDTH - 20, WORLD_HEIGHT - 128);
+                centerText(bitmapFont, "-20", WORLD_WIDTH - 86, WORLD_HEIGHT - 200);
+                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 78, WORLD_HEIGHT - 204, 6, 6);
+                centerText(bitmapFont, "-5", WORLD_WIDTH - 60, WORLD_HEIGHT - 200);
+                batch.draw(symbolTextures[0][2], WORLD_WIDTH - 54, WORLD_HEIGHT - 204, 6, 6);
+                centerText(bitmapFont, "+" + (autoCoins[2] + 1), WORLD_WIDTH - 40, WORLD_HEIGHT - 200);
+                batch.draw(symbolTextures[0][2], WORLD_WIDTH - 32, WORLD_HEIGHT - 204f, 6, 6);
+                centerText(bitmapFont, "/sec", WORLD_WIDTH - 18, WORLD_HEIGHT - 200);
+            }
+
+            if(currenciesUnlock[2]) {
+                if (currencies[4] >= 25 && currencies[3] >= 5) { bitmapFont.setColor(Color.WHITE); }
+                else { bitmapFont.setColor(Color.GRAY); }
+                bitmapFont.getData().setScale(.75f);
+                centerText(bitmapFont, "Auto-Balance", WORLD_WIDTH - 38, WORLD_HEIGHT - 256);
+                bitmapFont.getData().setScale(0.6f);
+                centerText(bitmapFont, "-25", WORLD_WIDTH - 86, WORLD_HEIGHT - 270);
+                batch.draw(symbolTextures[0][4], WORLD_WIDTH - 78, WORLD_HEIGHT - 274, 6, 6);
+                centerText(bitmapFont, "-5", WORLD_WIDTH - 60, WORLD_HEIGHT - 270);
+                batch.draw(symbolTextures[0][3], WORLD_WIDTH - 54, WORLD_HEIGHT - 274, 6, 6);
+                centerText(bitmapFont, "+" + (autoCoins[3] + 1), WORLD_WIDTH - 40, WORLD_HEIGHT - 270);
+                batch.draw(symbolTextures[0][3], WORLD_WIDTH - 32, WORLD_HEIGHT - 274f, 6, 6);
+                centerText(bitmapFont, "/sec", WORLD_WIDTH - 18, WORLD_HEIGHT - 270);
             }
         }
 
@@ -946,6 +1063,5 @@ class MainScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         menuStage.dispose();
-        music.dispose();
     }
 }
