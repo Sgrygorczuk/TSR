@@ -50,6 +50,7 @@ public class FightScreen extends ScreenAdapter{
     private Texture lifeBarTexture;
     private Texture bloodTexture;
     private Texture frameTexture;
+    private Texture blockTexture;
 
     private Sprite fatBuddy;
     private Sprite thinBuddy;
@@ -60,6 +61,8 @@ public class FightScreen extends ScreenAdapter{
     int currentFrame = 0;
     float fatBuddyAlpha = 1;
     float thinBuddyAlpha = 0;
+    boolean stageTwoNewBodyFlag = false;
+    int stage;
 
     //Timing variable used to stop the abbot bounce effect from stacking
     private static final float FRAME_TIME = 0.6F;
@@ -70,7 +73,10 @@ public class FightScreen extends ScreenAdapter{
     Output: Void
     Purpose: Grabs the info from main screen that holds asset manager
     */
-    FightScreen(TSR tsr) { this.tsr = tsr;}
+    FightScreen(TSR tsr, int stage) {
+        this.tsr = tsr;
+        this.stage = stage;
+    }
 
     /*
     Input: Dimensions
@@ -112,28 +118,61 @@ public class FightScreen extends ScreenAdapter{
     Purpose: Loads all the data needed for the assetmanager
     */
     private void loadAssets(){
+        //Set up deafult paths
         Texture  introTexturePath = new Texture(Gdx.files.internal("Sprites/VSBagSpriteSheet.png"));
-        intoPanelTextures = new TextureRegion(introTexturePath).split(480, 320); //Breaks down the texture into tiles
-
         Texture  fightTexturePath = new Texture(Gdx.files.internal("Sprites/BagHitSpriteSheet.png"));
-        fightPanelTextures = new TextureRegion(fightTexturePath).split(480, 320); //Breaks down the texture into tiles
-
         Texture  winTexturePath = new Texture(Gdx.files.internal("Sprites/BagWinSpriteSheet.png"));
-        winPanelTextures = new TextureRegion(winTexturePath).split(480, 320); //Breaks down the texture into tiles
 
         Texture buddyTexturePath = new Texture(Gdx.files.internal("Sprites/TransformSpriteSheet.png"));
         TextureRegion[][] buddyTextures = new TextureRegion(buddyTexturePath).split(126, 118); //Breaks down the texture into tiles
 
-        fatBuddy = new Sprite(buddyTextures[0][0]);
+        switch (stage){
+            case 0:{
+                fatBuddy = new Sprite(buddyTextures[0][0]);
+                thinBuddy = new Sprite(buddyTextures[0][1]);
+                break;
+            }
+            case 1:{
+                //New connections
+                introTexturePath = new Texture(Gdx.files.internal("Sprites/VSMasterSprite.png"));
+                fightTexturePath = new Texture(Gdx.files.internal("Sprites/MasterFigthSpriteSheet.png"));
+                winTexturePath = new Texture(Gdx.files.internal("Sprites/MasterWinSpriteSheet.png"));
+
+                fatBuddy = new Sprite(buddyTextures[0][1]);
+                thinBuddy = new Sprite(buddyTextures[0][2]);
+                break;
+            }
+            case 2:{
+                introTexturePath = new Texture(Gdx.files.internal("Sprites/VsBullyOne.png"));
+                fightTexturePath = new Texture(Gdx.files.internal("Sprites/BullyFightSpriteSheetOne.png"));
+                winTexturePath = new Texture(Gdx.files.internal("Sprites/VillanWIn.png"));
+                fatBuddy = new Sprite(buddyTextures[0][2]);
+                thinBuddy = new Sprite(buddyTextures[0][3]);
+                break;
+            }
+            case 3:{
+                introTexturePath = new Texture(Gdx.files.internal("Sprites/VsBullyTwo.png"));
+                fightTexturePath = new Texture(Gdx.files.internal("Sprites/BullyFightSpriteSheetTwo_One.png"));
+                winTexturePath = new Texture(Gdx.files.internal("Sprites/GoodguyWin.png"));
+                fatBuddy = new Sprite(buddyTextures[0][2]);
+                thinBuddy = new Sprite(buddyTextures[0][4]);
+                break;
+            }
+        }
+
+        intoPanelTextures = new TextureRegion(introTexturePath).split(480, 320); //Breaks down the texture into tiles
+        fightPanelTextures = new TextureRegion(fightTexturePath).split(480, 320); //Breaks down the texture into tiles
+        winPanelTextures = new TextureRegion(winTexturePath).split(480, 320); //Breaks down the texture into tiles
+
         fatBuddy.setAlpha(1);
-        fatBuddy.setPosition(WORLD_WIDTH/2f - buddyTextures[0][0].getRegionWidth()/2f, WORLD_HEIGHT/2f - buddyTextures[0][0].getRegionHeight()/2f);
-        thinBuddy = new Sprite(buddyTextures[0][1]);
+        fatBuddy.setPosition(WORLD_WIDTH / 2f - buddyTextures[0][0].getRegionWidth() / 2f, WORLD_HEIGHT / 2f - buddyTextures[0][0].getRegionHeight() / 2f);
         thinBuddy.setAlpha(1);
-        thinBuddy.setPosition(WORLD_WIDTH/2f - buddyTextures[0][0].getRegionWidth()/2f, WORLD_HEIGHT/2f - buddyTextures[0][0].getRegionHeight()/2f);
+        thinBuddy.setPosition(WORLD_WIDTH / 2f - buddyTextures[0][0].getRegionWidth() / 2f, WORLD_HEIGHT / 2f - buddyTextures[0][0].getRegionHeight() / 2f);
 
         lifeBarTexture = new Texture(Gdx.files.internal("Sprites/LifeBar.png"));
         bloodTexture = new Texture(Gdx.files.internal("Sprites/LifeBarBlood.png"));
         frameTexture = new Texture(Gdx.files.internal("Sprites/Frame.png"));
+        blockTexture = new Texture(Gdx.files.internal("Sprites/Block.png"));
 
     }
 
@@ -142,14 +181,12 @@ public class FightScreen extends ScreenAdapter{
         menuStage = new Stage(new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT));
         Gdx.input.setInputProcessor(menuStage); //Gives controll to the stage for clicking on buttons
 
-        Texture fightButtonPath = new Texture(Gdx.files.internal("Sprites/FightButton.png"));
-        final TextureRegion[][] fightButtonSpriteSheet = new TextureRegion(fightButtonPath).split(258, 138); //Breaks down the texture into tiles
+        Texture fightButtonPath = new Texture(Gdx.files.internal("Sprites/CircleButton.png"));
+        final TextureRegion[][] fightButtonSpriteSheet = new TextureRegion(fightButtonPath).split(70, 71); //Breaks down the texture into tiles
 
-        menuButtons[0] =  new ImageButton(new TextureRegionDrawable(fightButtonSpriteSheet[0][0]), new TextureRegionDrawable(fightButtonSpriteSheet[1][0]));
+        menuButtons[0] =  new ImageButton(new TextureRegionDrawable(fightButtonSpriteSheet[0][0]), new TextureRegionDrawable(fightButtonSpriteSheet[0][1]));
         menuButtons[0].setPosition(40, 60);
         menuStage.addActor(menuButtons[0]);
-        menuButtons[0].setWidth(menuButtons[0].getWidth()/3f);
-        menuButtons[0].setHeight(menuButtons[0].getHeight()/3f);
         menuButtons[0].setVisible(false);
 
         //If button has not been clicked turn on menu and pause game,
@@ -171,7 +208,7 @@ public class FightScreen extends ScreenAdapter{
                 }
                 else if(life == 20){
                     currentFrame = 2;
-                    menuButtons[0].setPosition(200 - menuButtons[0].getWidth()/6f, 20);
+                    menuButtons[0].setPosition(WORLD_WIDTH/2 - menuButtons[0].getWidth()/2f, 20);
                 }
                 else{
                     if(currentFrame < 2){currentFrame++;}
@@ -180,6 +217,14 @@ public class FightScreen extends ScreenAdapter{
                 if(life > 0){life--;}
                 timeCounter = 0;
 
+                if(stage == 1 && life == 5 && !stageTwoNewBodyFlag || stage == 3 && life == 5 && !stageTwoNewBodyFlag){
+                    life = 31;
+                    Texture fightTexturePath;
+                    if(stage == 1){fightTexturePath = new Texture(Gdx.files.internal("Sprites/MasterFigthSpriteSheetTwo.png"));}
+                    else{fightTexturePath = new Texture(Gdx.files.internal("Sprites/BullyFightSpriteSheetTwo_Two.png"));}
+                    fightPanelTextures = new TextureRegion(fightTexturePath).split(480, 320); //Breaks down the texture into tiles
+                    stageTwoNewBodyFlag = true;
+                }
                 if(life == 0){
                     currentFrame = 0;
                     levelState = 2;
@@ -216,8 +261,12 @@ public class FightScreen extends ScreenAdapter{
     */
     private void updateFrameTimer(float delta) {
         frameTimer -= delta;
+
         if (frameTimer <= 0) {
             frameTimer = FRAME_TIME;
+
+            if(stage == 1 && life == 31){ life--; }
+
             if(levelState == 0){
                 if(timeCounter < 6) {
                     if (currentFrame == 0) { currentFrame++; }
@@ -257,7 +306,8 @@ public class FightScreen extends ScreenAdapter{
                 }
                 else if(timeCounter == 2){
                     dispose();
-                    tsr.setScreen(new MainScreen(tsr));
+                    if(stage < 2){tsr.setScreen(new MainScreen(tsr, stage+1));}
+                    else{tsr.setScreen(new MenuScreen(tsr));}
                 }
             }
         }
@@ -275,27 +325,34 @@ public class FightScreen extends ScreenAdapter{
         batch.setTransformMatrix(camera.view);
         //Batch setting up texture before drawing buttons
         batch.begin();
-        switch (levelState){
-            case 0:{
+        if(stage == 1 && life == 31){
+            batch.draw(blockTexture, 0 ,0);
+        }
+        else{
+        switch (levelState) {
+            case 0: {
                 batch.draw(intoPanelTextures[currentFrame][0], 0, 0);
                 break;
             }
-            case 1:{
+            case 1: {
                 batch.draw(fightPanelTextures[currentFrame][0], 0, 0);
-                batch.draw(bloodTexture, WORLD_WIDTH/2f - bloodTexture.getWidth()/2f, WORLD_HEIGHT - 45, bloodTexture.getWidth()*life/30f, bloodTexture.getHeight());
-                batch.draw(lifeBarTexture, WORLD_WIDTH/2f - bloodTexture.getWidth()/2f - 9, WORLD_HEIGHT - 52);
+                batch.draw(bloodTexture, WORLD_WIDTH / 2f - bloodTexture.getWidth() / 2f, WORLD_HEIGHT - 45, bloodTexture.getWidth() * life / 30f, bloodTexture.getHeight());
+                batch.draw(lifeBarTexture, WORLD_WIDTH / 2f - bloodTexture.getWidth() / 2f - 9, WORLD_HEIGHT - 52);
                 break;
             }
-            case 2:{
-                if(currentFrame < 3){batch.draw(winPanelTextures[currentFrame][0], 0, 0);}
+            case 2: {
+                if (currentFrame < 3) {
+                    batch.draw(winPanelTextures[currentFrame][0], 0, 0);
+                }
                 break;
             }
-            case 3:{
-                batch.draw(frameTexture, 0,0 );
+            case 3: {
+                batch.draw(frameTexture, 0, 0);
                 fatBuddy.draw(batch, fatBuddyAlpha);
                 thinBuddy.draw(batch, thinBuddyAlpha);
                 drawText();
             }
+        }
         }
         batch.end();
 
@@ -308,12 +365,29 @@ public class FightScreen extends ScreenAdapter{
 
     private void drawText(){
         bitmapFont.getData().setScale(1f);
-        String string;
+        String string = "";
         if(fatBuddyAlpha > 0) {
             string = addNewLine("Something is happening to Buddy?!", 60);
         }
         else{
-            string = addNewLine("Buddy made mad gains.", 60);
+            switch (stage){
+                case 0:{
+                    string = addNewLine("Buddy made mad gains.", 60);
+                    break;
+                }
+                case 1:{
+                    string = addNewLine("Buddy has ascended!", 60);
+                    break;
+                }
+                case 2:{
+                    string = addNewLine("Buddy has become the Bully!", 60);
+                    break;
+                }
+                case 3:{
+                    string = addNewLine("Buddy and Bully have become friends. Buddy has become a hero!", 60);
+                    break;
+                }
+            }
         }
         centerText(bitmapFont, string, WORLD_WIDTH / 2f, 25);
 
@@ -328,6 +402,7 @@ public class FightScreen extends ScreenAdapter{
         Gdx.gl.glClearColor(Color.BLACK.r, Color.BLACK.g, Color.BLACK.b, Color.BLACK.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
     }
+
 
     /*
     Input: BitmapFont for size and font of text, string the text, and x and y for position

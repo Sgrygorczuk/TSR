@@ -86,6 +86,11 @@ class MainScreen extends ScreenAdapter {
 
     //Names of buttons
     private String[] menuButtonText = new String[]{"Main Menu", "Restart", "Help", "Sound Off", "Sound On"};
+    private String[] currentText = new String[9];
+    private String[] stageOneText = new String[]{"Focus", "Jump", "Punch", "Balance", "Study", "Auto-Focus", "Auto-Jump", "Auto-Punch", "Auto-Balance"};
+    private String[] stageTwoText = new String[]{"Meditate", "Run", "Punch", "Dodge", "Tournament", "Auto-Meditate", "Auto-Run", "Auto-Punch", "Auto-Dodge"};
+    private String[] stageThreeText = new String[]{"Power Up", "Ki Blasts", "Boulder Squat", "Transmission", "Ka-Move", "Auto-Power", "Auto-Ki", "Auto-Squat", "Auto-Trans"};
+
 
     //Flags
     private int[] currencies = new int[]{0,0,0,0,0};
@@ -98,6 +103,7 @@ class MainScreen extends ScreenAdapter {
     private boolean endFlag = false;            //Tells us game has been lost
     private float sfxVolume = 1f;               //Current sfx volume
     private boolean helpFlag = false;           //Tells us if help flag is on or off
+    private int stage;  //0 Fat, 1 Skinny, 2 Buff
 
     //Timing variable used to stop the abbot bounce effect from stacking
     private static final float AUTO_TIME = 1F;
@@ -108,7 +114,10 @@ class MainScreen extends ScreenAdapter {
     Output: Void
     Purpose: Grabs the info from main screen that holds asset manager
     */
-    MainScreen(TSR tsr) { this.tsr = tsr;}
+    MainScreen(TSR tsr, int stage) {
+        this.tsr = tsr;
+        this.stage = stage;
+    }
 
 
     /*
@@ -165,9 +174,23 @@ class MainScreen extends ScreenAdapter {
         Texture panelTexturePath = new Texture(Gdx.files.internal("Sprites/BoarderSpriteSheet.png"));
         trainingPanelsTextures = new TextureRegion(panelTexturePath).split(136, 128); //Breaks down the texture into tiles
 
-        Texture buddyTexturePath = new Texture(Gdx.files.internal("Sprites/StageOneSpriteSheet.png"));
-        buddyTextures = new TextureRegion(buddyTexturePath).split(126, 118); //Breaks down the texture into tiles
-
+        switch (stage){
+            case 0:{
+                Texture buddyTexturePath = new Texture(Gdx.files.internal("Sprites/StageOneSpriteSheet.png"));
+                buddyTextures = new TextureRegion(buddyTexturePath).split(126, 118); //Breaks down the texture into tiles
+                break;
+            }
+            case 1:{
+                Texture buddyTexturePath = new Texture(Gdx.files.internal("Sprites/StageTwoSpriteSheet.png"));
+                buddyTextures = new TextureRegion(buddyTexturePath).split(126, 118); //Breaks down the texture into tiles
+                break;
+            }
+            case 2:{
+                Texture buddyTexturePath = new Texture(Gdx.files.internal("Sprites/StageThreeSpriteSheet.png"));
+                buddyTextures = new TextureRegion(buddyTexturePath).split(126, 118); //Breaks down the texture into tiles
+                break;
+            }
+        }
     }
 
     /*
@@ -264,7 +287,6 @@ class MainScreen extends ScreenAdapter {
                         currencies[4]++;
                         techFlag = true;
                     }
-
                 }
             });
         }
@@ -289,6 +311,7 @@ class MainScreen extends ScreenAdapter {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
+                /*
                 if (!endFlag) {
                     playButtonSFX();
                     pausedFlag = !pausedFlag;
@@ -297,6 +320,7 @@ class MainScreen extends ScreenAdapter {
                         else{menuButtons[i].setVisible(false);}               //Turns off 1-5 buttons
                     }
                 }
+                */
             }
         });
 
@@ -351,7 +375,8 @@ class MainScreen extends ScreenAdapter {
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 dispose();
-                tsr.setScreen(new FightScreen(tsr));
+                if(stage < 2){tsr.setScreen(new FightScreen(tsr, stage));}
+                else{tsr.setScreen(new IntroScreen(tsr, 1));}
             }
         });
     }
@@ -491,6 +516,20 @@ class MainScreen extends ScreenAdapter {
         float[] y = new float[]{45, 135, 95, 146, 40};
         buddySprite = new BuddySprite(x, y, buddyTextures);
 
+        switch (stage){
+            case 0:{
+                currentText = stageOneText;
+                break;
+            }
+            case 1:{
+                currentText = stageTwoText;
+                break;
+            }
+            case 2:{
+                currentText = stageThreeText;
+            }
+        }
+
     }
 
     /*
@@ -559,8 +598,8 @@ class MainScreen extends ScreenAdapter {
     }
 
     private void updateGameButtonVisibility(){
-        if(currencies[endGameState] >= 1000){ menuButtons[6].setVisible(true);}
-        else{ clickerButtons[6].setVisible(false);}
+        if(currencies[endGameState] >= 1000){ menuButtons[6].setVisible(true); }
+        else{ menuButtons[6].setVisible(false); }
 
         if(endGameState == 4){ menuButtons[7].setVisible(true);}
         else{ clickerButtons[7].setVisible(false);}
@@ -584,7 +623,7 @@ class MainScreen extends ScreenAdapter {
         if(techFlag && currenciesUnlock[1] &&  currencies[4] >= 15 && currencies[1] >= 5){ clickerButtons[3].setVisible(true);}
         else{ clickerButtons[3].setVisible(false);}
 
-        if(techFlag && currenciesUnlock[3] &&  currencies[4] >= 29 && currencies[2] >= 5){ clickerButtons[5].setVisible(true);}
+        if(techFlag && currenciesUnlock[3] &&  currencies[4] >= 20 && currencies[2] >= 5){ clickerButtons[5].setVisible(true);}
         else{ clickerButtons[5].setVisible(false);}
 
         if(techFlag && currenciesUnlock[2] && currencies[4] >= 25 && currencies[3] >= 5){ clickerButtons[7].setVisible(true);}
@@ -883,12 +922,13 @@ class MainScreen extends ScreenAdapter {
     }
 
     private void drawInGameButtonText(){
+
         bitmapFont.setColor(Color.WHITE);
         bitmapFont.getData().setScale(1f);
         centerText(bitmapFont, "Menu", 44, WORLD_HEIGHT - 16);
 
         bitmapFont.getData().setScale(0.8f);
-        centerText(bitmapFont, "Focus", WORLD_WIDTH-48, WORLD_HEIGHT - 12);
+        centerText(bitmapFont, currentText[0], WORLD_WIDTH-48, WORLD_HEIGHT - 12);
         bitmapFont.getData().setScale(0.6f);
         centerText(bitmapFont, "+", WORLD_WIDTH-53, WORLD_HEIGHT - 22);
         batch.draw(symbolTextures[0][0], WORLD_WIDTH-48, WORLD_HEIGHT - 25f, 6, 6);
@@ -897,7 +937,7 @@ class MainScreen extends ScreenAdapter {
             if (currencies[0] >= 5) { bitmapFont.setColor(Color.WHITE); }
             else { bitmapFont.setColor(Color.GRAY); }
             bitmapFont.getData().setScale(0.8f);
-            centerText(bitmapFont, "Jump", WORLD_WIDTH - 48, WORLD_HEIGHT - 82);
+            centerText(bitmapFont, currentText[1], WORLD_WIDTH - 48, WORLD_HEIGHT - 82);
             bitmapFont.getData().setScale(0.6f);
             centerText(bitmapFont, "-5", WORLD_WIDTH - 66, WORLD_HEIGHT - 92);
             batch.draw(symbolTextures[0][0], WORLD_WIDTH - 61, WORLD_HEIGHT - 95, 6, 6);
@@ -909,7 +949,7 @@ class MainScreen extends ScreenAdapter {
             if (currencies[0] >= 10 && currencies[1] >= 5) { bitmapFont.setColor(Color.WHITE); }
             else { bitmapFont.setColor(Color.GRAY); }
             bitmapFont.getData().setScale(0.8f);
-            centerText(bitmapFont, "Punch", WORLD_WIDTH - 48, WORLD_HEIGHT - 152);
+            centerText(bitmapFont, currentText[2], WORLD_WIDTH - 48, WORLD_HEIGHT - 152);
             bitmapFont.getData().setScale(0.6f);
             centerText(bitmapFont, "-10", WORLD_WIDTH - 76, WORLD_HEIGHT - 162);
             batch.draw(symbolTextures[0][0], WORLD_WIDTH - 66, WORLD_HEIGHT - 165, 6, 6);
@@ -923,7 +963,7 @@ class MainScreen extends ScreenAdapter {
             if (currencies[1] >= 5 && currencies[2] >= 5) { bitmapFont.setColor(Color.WHITE); }
             else { bitmapFont.setColor(Color.GRAY); }
             bitmapFont.getData().setScale(0.8f);
-            centerText(bitmapFont, "Balance", WORLD_WIDTH - 48, WORLD_HEIGHT - 222);
+            centerText(bitmapFont, currentText[3], WORLD_WIDTH - 48, WORLD_HEIGHT - 222);
             bitmapFont.getData().setScale(0.6f);
             centerText(bitmapFont, "-5", WORLD_WIDTH - 76, WORLD_HEIGHT - 232);
             batch.draw(symbolTextures[0][1], WORLD_WIDTH - 66, WORLD_HEIGHT - 235, 6, 6);
@@ -937,7 +977,7 @@ class MainScreen extends ScreenAdapter {
             if (currencies[0] >= 10) { bitmapFont.setColor(Color.WHITE); }
             else { bitmapFont.setColor(Color.GRAY); }
             bitmapFont.getData().setScale(0.8f);
-            centerText(bitmapFont, "Study", WORLD_WIDTH - 48, WORLD_HEIGHT - 292);
+            centerText(bitmapFont, currentText[4], WORLD_WIDTH - 48, WORLD_HEIGHT - 292);
             bitmapFont.getData().setScale(0.6f);
             centerText(bitmapFont, "-10", WORLD_WIDTH - 66, WORLD_HEIGHT - 302);
             batch.draw(symbolTextures[0][0], WORLD_WIDTH - 58, WORLD_HEIGHT - 305, 6, 6);
@@ -950,7 +990,7 @@ class MainScreen extends ScreenAdapter {
                 if (currencies[4] >= 10) { bitmapFont.setColor(Color.WHITE); }
                 else { bitmapFont.setColor(Color.GRAY); }
                 bitmapFont.getData().setScale(0.8f);
-                centerText(bitmapFont, "Auto-Focus", WORLD_WIDTH - 38, WORLD_HEIGHT - 46);
+                centerText(bitmapFont, currentText[5], WORLD_WIDTH - 38, WORLD_HEIGHT - 46);
                 bitmapFont.getData().setScale(0.6f);
                 centerText(bitmapFont, "-10", WORLD_WIDTH - 66, WORLD_HEIGHT - 60);
                 batch.draw(symbolTextures[0][4], WORLD_WIDTH - 58, WORLD_HEIGHT - 64, 6, 6);
@@ -961,7 +1001,7 @@ class MainScreen extends ScreenAdapter {
                 if (currencies[4] >= 15  && currencies[1] >= 5) { bitmapFont.setColor(Color.WHITE); }
                 else { bitmapFont.setColor(Color.GRAY); }
                 bitmapFont.getData().setScale(0.8f);
-                centerText(bitmapFont, "Auto-Jump", WORLD_WIDTH - 38, WORLD_HEIGHT - 116);
+                centerText(bitmapFont, currentText[6], WORLD_WIDTH - 38, WORLD_HEIGHT - 116);
                 bitmapFont.getData().setScale(0.6f);
                 centerText(bitmapFont, "-15", WORLD_WIDTH - 86, WORLD_HEIGHT - 130);
                 batch.draw(symbolTextures[0][4], WORLD_WIDTH - 78, WORLD_HEIGHT - 134, 6, 6);
@@ -976,7 +1016,7 @@ class MainScreen extends ScreenAdapter {
                 if (currencies[4] >= 20 && currencies[2] >= 5) { bitmapFont.setColor(Color.WHITE); }
                 else { bitmapFont.setColor(Color.GRAY); }
                 bitmapFont.getData().setScale(0.8f);
-                centerText(bitmapFont, "Auto-Punch", WORLD_WIDTH - 38, WORLD_HEIGHT - 186);
+                centerText(bitmapFont, currentText[7], WORLD_WIDTH - 38, WORLD_HEIGHT - 186);
                 bitmapFont.getData().setScale(0.6f);
                 centerText(bitmapFont, "-20", WORLD_WIDTH - 86, WORLD_HEIGHT - 200);
                 batch.draw(symbolTextures[0][4], WORLD_WIDTH - 78, WORLD_HEIGHT - 204, 6, 6);
@@ -991,7 +1031,7 @@ class MainScreen extends ScreenAdapter {
                 if (currencies[4] >= 25 && currencies[3] >= 5) { bitmapFont.setColor(Color.WHITE); }
                 else { bitmapFont.setColor(Color.GRAY); }
                 bitmapFont.getData().setScale(.75f);
-                centerText(bitmapFont, "Auto-Balance", WORLD_WIDTH - 38, WORLD_HEIGHT - 256);
+                centerText(bitmapFont, currentText[8], WORLD_WIDTH - 38, WORLD_HEIGHT - 256);
                 bitmapFont.getData().setScale(0.6f);
                 centerText(bitmapFont, "-25", WORLD_WIDTH - 86, WORLD_HEIGHT - 270);
                 batch.draw(symbolTextures[0][4], WORLD_WIDTH - 78, WORLD_HEIGHT - 274, 6, 6);

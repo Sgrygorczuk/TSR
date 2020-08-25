@@ -148,18 +148,18 @@ public class MenuScreen extends ScreenAdapter{
                 @Override
                 public void tap(InputEvent event, float x, float y, int count, int button) {
                     super.tap(event, x, y, count, button);
-                    playButtonFX();
+                    //playButtonFX();
                     //Launches the game
                     if(finalI == 0){
                         //music.stop();
                         dispose();
-                        tsr.setScreen(new IntroScreen(tsr));
+                        tsr.setScreen(new IntroScreen(tsr, 0));
                     }
                     //Turns on the credits menu
                     else{
-                        for (ImageButton imageButton : menuButtons) { imageButton.setVisible(false); }
-                        creditsFlag = true;
-                        menuButtons[2].setVisible(true);
+                        //for (ImageButton imageButton : menuButtons) { imageButton.setVisible(false); }
+                        //creditsFlag = true;
+                        //menuButtons[2].setVisible(true);
                     }
                 }
             });
@@ -188,7 +188,7 @@ public class MenuScreen extends ScreenAdapter{
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                playButtonFX();
+                //playButtonFX();
                 helpFlag = false;
                 creditsFlag = false;
                 for (ImageButton imageButton : menuButtons) { imageButton.setVisible(true); }
