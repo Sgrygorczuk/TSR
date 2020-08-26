@@ -85,13 +85,6 @@ public class LoadingScreen extends ScreenAdapter{
         //Logo that's displayed during loading
         logoTexture = new Texture(Gdx.files.internal("Sprites/Logo.png"));
 
-        //Load the font
-        /*
-        BitmapFontLoader.BitmapFontParameter bitmapFontParameter = new BitmapFontLoader.BitmapFontParameter();
-        bitmapFontParameter.atlasName = "font_assets.atlas";
-        dogFighter.getAssetManager().load("Fonts/GreedyGobo.fnt", BitmapFont.class, bitmapFontParameter);
-        */
-
         //Loading the music
         /*
         dogFighter.getAssetManager().load("Music/GoboLevelTheme.wav", Music.class);

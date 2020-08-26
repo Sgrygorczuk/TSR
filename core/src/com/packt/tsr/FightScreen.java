@@ -1,11 +1,7 @@
 package com.packt.tsr;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.assets.loaders.BitmapFontLoader;
-import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -367,29 +363,29 @@ public class FightScreen extends ScreenAdapter{
         bitmapFont.getData().setScale(1f);
         String string = "";
         if(fatBuddyAlpha > 0) {
-            string = addNewLine("Something is happening to Buddy?!", 60);
+            string = addNewLine("Something is happening to Buddy?!");
         }
         else{
             switch (stage){
                 case 0:{
-                    string = addNewLine("Buddy made mad gains.", 60);
+                    string = addNewLine("Buddy made mad gains.");
                     break;
                 }
                 case 1:{
-                    string = addNewLine("Buddy has ascended!", 60);
+                    string = addNewLine("Buddy has ascended!");
                     break;
                 }
                 case 2:{
-                    string = addNewLine("Buddy has become the Bully!", 60);
+                    string = addNewLine("Buddy has become the Bully!");
                     break;
                 }
                 case 3:{
-                    string = addNewLine("Buddy and Bully have become friends. Buddy has become a hero!", 60);
+                    string = addNewLine("Buddy and Bully have become friends. Buddy has become a hero!");
                     break;
                 }
             }
         }
-        centerText(bitmapFont, string, WORLD_WIDTH / 2f, 25);
+        centerText(bitmapFont, string);
 
     }
 
@@ -409,10 +405,10 @@ public class FightScreen extends ScreenAdapter{
     Output: Void
     Purpose: General purpose function that centers the text on the position
     */
-    private void centerText(BitmapFont bitmapFont, String string, float x, float y){
+    private void centerText(BitmapFont bitmapFont, String string){
         GlyphLayout glyphLayout = new GlyphLayout();
         glyphLayout.setText(bitmapFont, string);
-        bitmapFont.draw(batch, string,  x - glyphLayout.width/2, y + glyphLayout.height/2);
+        bitmapFont.draw(batch, string,  (float) 240.0 - glyphLayout.width/2, (float) 25 + glyphLayout.height/2);
     }
 
     /*
@@ -421,11 +417,11 @@ public class FightScreen extends ScreenAdapter{
     Purpose: This function take a string and adds a new line whenever it reaches the length between it's starting position andlengtht,
     if start + length happens to occur on a non space char it goes back to the nearest space char
     */
-    private String addNewLine(String str, int length){
+    private String addNewLine(String str){
         int spaceFound;
-        for (int j = 0; length * (j + 1) + j*3 < str.length(); j++) {
+        for (int j = 0; 60 * (j + 1) + j*3 < str.length(); j++) {
             //Finds the new position of where a " " occurs
-            spaceFound = str.lastIndexOf(" ", length * (j + 1) + j*3) + 1;
+            spaceFound = str.lastIndexOf(" ", 60 * (j + 1) + j*3) + 1;
             //Adds in a new line if this is not the end of the string
             if(str.length() >= spaceFound + 1){ str = str.substring(0, spaceFound) + "\n" + str.substring(spaceFound);}
         }

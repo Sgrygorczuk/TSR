@@ -3,9 +3,6 @@ package com.packt.tsr;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.assets.loaders.BitmapFontLoader;
-import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -48,7 +45,7 @@ public class IntroScreen extends ScreenAdapter{
     int panelCounter = 0;
     int sizeCount = 0;
     boolean letGo = true;
-    int stage = 0;
+    int stage;
     boolean continueEnd = false;
 
     /*
@@ -78,7 +75,7 @@ public class IntroScreen extends ScreenAdapter{
     public void show() {
         //Sets up the camera
         showCamera();           //Sets up camera through which objects are draw through
-        loadAssets();           //Loads the stuff into the asset manager
+        setUpCutScene();           //Loads the stuff into the asset manager
         setUpButtons();
     }
 
@@ -97,15 +94,17 @@ public class IntroScreen extends ScreenAdapter{
     /*
     Input: Void
     Output: Void
-    Purpose: Loads all the data needed for the assetmanager
+    Purpose: Loads the sprite sheet that the cut scene will play out
     */
-    private void loadAssets(){
+    private void setUpCutScene(){
         switch (stage) {
+            //Loads the intro cut scene
             case 0: {
                 Texture introTexturePath = new Texture(Gdx.files.internal("Sprites/IntroSpriteSheet.png"));
                 intoPanelTextures = new TextureRegion(introTexturePath).split(480, 320); //Breaks down the texture into tiles
                 break;
             }
+            //Loads the confrontation cut scene
             case 1: {
                 Texture introTexturePath = new Texture(Gdx.files.internal("Sprites/Stage3Meeting.png"));
                 intoPanelTextures = new TextureRegion(introTexturePath).split(480, 320); //Breaks down the texture into tiles
@@ -114,10 +113,16 @@ public class IntroScreen extends ScreenAdapter{
         }
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the buttons that give player choice during the Confrontation Cut Scene
+    */
     private void setUpButtons(){
         menuStage = new Stage(new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT));
-        Gdx.input.setInputProcessor(menuStage); //Gives controll to the stage for clicking on buttons
+        Gdx.input.setInputProcessor(menuStage); //Gives control to the stage for clicking on buttons
 
+        //Sets up the button to take revenge
         Texture fightButtonPath = new Texture(Gdx.files.internal("Sprites/FightButton.png"));
         TextureRegion[][] fightButtonSpriteSheet = new TextureRegion(fightButtonPath).split(258, 138); //Breaks down the texture into tiles
 
@@ -134,10 +139,12 @@ public class IntroScreen extends ScreenAdapter{
                 super.tap(event, x, y, count, button);
                 menuButtons[0].setVisible(false);
                 menuButtons[1].setVisible(false);
+                dispose();
                 tsr.setScreen(new FightScreen(tsr, 2));
             }
         });
 
+        //Sets up the button to forgive which continues the cut scene
         fightButtonPath = new Texture(Gdx.files.internal("Sprites/RedeemButton.png"));
         fightButtonSpriteSheet = new TextureRegion(fightButtonPath).split(258, 138); //Breaks down the texture into tiles
 
@@ -168,7 +175,7 @@ public class IntroScreen extends ScreenAdapter{
     */
     @Override
     public void render(float delta) {
-        update(delta);       //Update the variables
+        update();       //Update the variables
         draw();
     }
 
@@ -177,27 +184,43 @@ public class IntroScreen extends ScreenAdapter{
     Output: Void
     Purpose: Updates the variable of the progress bar, when the whole thing is load it turn on game screen
     */
-    private void update(float delta) {
+    private void update() {
+        //Checks if the user is hold on the screen
         if( letGo && (Gdx.input.isTouched() || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT))){
-            if(stage == 0 || (stage == 1 && panelCounter < 4) || continueEnd){panelCounter++;}
-            sizeCount = 0;
+            //This works as long as we're not on the choice screen
+            if(stage == 0 || (stage == 1 && panelCounter < 4) || continueEnd){
+                panelCounter++;
+                sizeCount = 0;
+            }
             letGo = false;
         }
+        //Checks if the user has let go
         else if(!letGo && !Gdx.input.isTouched()){letGo = true;} //Make sure you only click once
         sizeCount++;
+
+        //If we're on the screen show the button for the user choice or revenge or forgiveness
         if(stage == 1 && panelCounter == 4 && !continueEnd){
             menuButtons[0].setVisible(true);
             menuButtons[1].setVisible(true);
         }
-        if(panelCounter == 8 && stage == 0){tsr.setScreen(new MainScreen(tsr, 0));}
-        if(stage == 1 && panelCounter == 7){tsr.setScreen(new FightScreen(tsr, 3));}
+
+        //Sends the user to the main game screen
+        if(stage == 0 && panelCounter == 8){
+            dispose();
+            tsr.setScreen(new MainScreen(tsr, 0));
+        }
+        //Send the user to the forgiveness fight screen
+        if(stage == 1 && panelCounter == 7){
+            dispose();
+            tsr.setScreen(new FightScreen(tsr, 3));
+        }
 
     }
 
     /*
     Input: Void
     Output: Void
-    Purpose: Draws the progress
+    Purpose: Central drawing function
     */
     private void draw() {
         clearScreen();
@@ -206,21 +229,27 @@ public class IntroScreen extends ScreenAdapter{
         batch.setTransformMatrix(camera.view);
         //Batch setting up texture before drawing buttons
         batch.begin();
+        //Draws the panels as long as their in scope of their sprite sheets
         if(panelCounter < 8 && stage == 0 || panelCounter < 7 && stage == 1){batch.draw(intoPanelTextures[panelCounter][0], 0, 0);}
+        //Draws text respective for each cut scene
         if(stage == 0){drawTextOne();}
-        else if(stage == 1){
-            drawTextTwo();
-        }
+        else{ drawTextTwo(); }
         batch.end();
 
         menuStage.draw();
 
         batch.begin();
+        //Draws text choice buttons
         if(stage == 1 && panelCounter == 4){drawButtonText();}
         batch.end();
 
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Draws the text on the choice buttons during confrontation cut scene
+    */
     private void drawButtonText(){
         bitmapFont.getData().setScale(0.8f);
         bitmapFont.setColor(Color.RED);
@@ -230,80 +259,91 @@ public class IntroScreen extends ScreenAdapter{
         centerText(bitmapFont, "Forgive", 336, WORLD_HEIGHT-28);
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Draws text for the intro cut scene
+    */
     private void drawTextOne(){
         bitmapFont.setColor(Color.WHITE);
         bitmapFont.getData().setScale(1f);
         String string = "";
         switch (panelCounter){
             case 0: {
-                string = addNewLine("Buddy was heading home watching his favorite show, Dragon Squares Y, on his Change-Gear.", 60);
+                string = addNewLine("Buddy was heading home watching his favorite show, Dragon Squares Y, on his Change-Gear.");
                 break;
             }
             case 1:{
-                string = addNewLine("But today he wouldn't be able to finish the show as Foe approached him.", 60);
+                string = addNewLine("But today he wouldn't be able to finish the show as Bully approached him.");
                 break;
             }
             case 2:{
-                string = addNewLine("Bully wanted Buddy's Change-Gear, but Buddy wasn't going to give it to him.", 60);
+                string = addNewLine("Bully wanted Buddy's Change-Gear, but Buddy wasn't going to give it to him.");
                 break;
             }
             case 3:{
-                string = addNewLine("Bully snached and tossed the Change-Gear to the pavement with a hard thud.", 60);
+                string = addNewLine("Bully snached and tossed the Change-Gear to the pavement with a hard thud.");
                 break;
             }
             case 4:{
-                string = addNewLine("Buddy protested, screamed and yelled but it was for nought. The Change-Gear was done for.", 60);
+                string = addNewLine("Buddy protested, screamed and yelled but it was for nought. The Change-Gear was done for.");
                 break;
             }
             case 5:{
-                string = addNewLine("Pieces flew ever which way, with each stomp Foe took on it.                 ", 60);
+                string = addNewLine("Pieces flew ever which way, with each stomp Bully took on it.");
                 break;
             }
             case 6:{
-                string = addNewLine("And just for good measure Bully's hands also flew over Buddy.", 60);
+                string = addNewLine("And just for good measure Bully's hands also flew over Buddy.");
                 break;
             }
             case 7:{
-                string = addNewLine("But this was the last time. This time Buddy will get his redemption!", 60);
+                string = addNewLine("But this was the last time. This time Buddy will get his redemption!");
                 break;
             }
         }
+        //Used to draw letter by letter
         if(sizeCount > string.length()){sizeCount = string.length()-1;}
         if(sizeCount < 0){sizeCount = 0;}
         centerText(bitmapFont, string.substring(0, sizeCount), WORLD_WIDTH/2f, 25);
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Draws text for the confrontation  cut scene
+    */
     private void drawTextTwo(){
         bitmapFont.setColor(Color.WHITE);
         bitmapFont.getData().setScale(1f);
         String string = "";
         switch (panelCounter){
             case 0: {
-                string = addNewLine("Again we find an innocent citizen walking down the streets.                  ", 60);
+                string = addNewLine("Again we find an innocent citizen walking down the streets.");
                 break;
             }
             case 1:{
-                string = addNewLine("Only to be met with imposing stature of the Bully.                             ", 60);
+                string = addNewLine("Only to be met with imposing stature of the Bully.\n         ");
                 break;
             }
             case 2:{
-                string = addNewLine("Business as usual give the Bully the stuff or pay the price              ", 60);
+                string = addNewLine("Business as usual give the Bully the stuff or pay the price");
                 break;
             }
             case 3:{
-                string = addNewLine("But today is different. Today Buddy was ready. No more bullying, no more pain. Buddy was here to save the day.", 60);
+                string = addNewLine("But today is different. Today Buddy was ready. No more bullying, no more pain. Buddy was here to save the day.");
                 break;
             }
             case 4: {
-                string = addNewLine("Will you enact your revenge or forgive the Bully?                 ", 60);
+                string = addNewLine("Will you enact your revenge or forgive the Bully?\n          ");
                 break;
             }
             case 5:{
-                string = addNewLine("The Bully steamed with anger at the 'forgiveness' he was not gonna let Buddy do this to him.", 60);
+                string = addNewLine("The Bully steamed with anger at the 'forgiveness' he was not gonna let Buddy do this to him.");
                 break;
             }
             case 6: {
-                string = addNewLine("It was time to unleash his final form!\n                                                       ", 60);
+                string = addNewLine("It was time to unleash his final form!\n                    ");
                 break;
             }
         }
@@ -339,11 +379,11 @@ public class IntroScreen extends ScreenAdapter{
     Purpose: This function take a string and adds a new line whenever it reaches the length between it's starting position andlengtht,
     if start + length happens to occur on a non space char it goes back to the nearest space char
     */
-    private String addNewLine(String str, int length){
+    private String addNewLine(String str){
         int spaceFound;
-        for (int j = 0; length * (j + 1) + j*3 < str.length(); j++) {
+        for (int j = 0; 60 * (j + 1) + j*3 < str.length(); j++) {
             //Finds the new position of where a " " occurs
-            spaceFound = str.lastIndexOf(" ", length * (j + 1) + j*3) + 1;
+            spaceFound = str.lastIndexOf(" ", 60 * (j + 1) + j*3) + 1;
             //Adds in a new line if this is not the end of the string
             if(str.length() >= spaceFound + 1){ str = str.substring(0, spaceFound) + "\n" + str.substring(spaceFound);}
         }
@@ -357,6 +397,6 @@ public class IntroScreen extends ScreenAdapter{
     */
     @Override
     public void dispose() {
-
+        menuStage.dispose();
     }
 }

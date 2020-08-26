@@ -13,7 +13,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
@@ -21,8 +20,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-
-import java.util.Vector;
 
 public class MenuScreen extends ScreenAdapter{
     //Screen Dimensions
@@ -36,14 +33,14 @@ public class MenuScreen extends ScreenAdapter{
 
     //The buttons used to move around the menus
     private Stage menuStage;
-    private ImageButton[] menuButtons;
+    private ImageButton[] menuButtons = new ImageButton[4];
 
     //Textures
-    private Texture menuScreenTexture;
-    private Texture popUpTexture;                       //Pop-up screen that the Credits and Help are displayed on
+    private Texture menuScreenTexture;    //This is the background
+    private TextureRegion[][] trainingPanelsTextures;   //The small panels in which Buddy trains
 
     //String used on the buttons
-    private String[] buttonText = new String[]{"Play", "Credits"};
+    private String[] buttonText = new String[]{"Continue", "Play", "Credits"};
     //Font used to write in
     private BitmapFont bitmapFont = new BitmapFont();
 
@@ -53,9 +50,7 @@ public class MenuScreen extends ScreenAdapter{
     //Game object that keeps track of settings
     private TSR tsr;
 
-    private boolean helpFlag;      //Tells if help menu is up or not
     private boolean creditsFlag;   //Tells if credits menu is up or not
-    boolean letGo = true;
 
     /*
     Input: SpaceHops
@@ -105,9 +100,10 @@ public class MenuScreen extends ScreenAdapter{
     Purpose: Sets textures that will be drawn
     */
     private void showTextures(){
-        //Basic single image textures
         menuScreenTexture = new Texture(Gdx.files.internal("Sprites/MenuScreen.png"));
-        popUpTexture = new Texture(Gdx.files.internal("UI/PopUpBoarder.png"));
+        Texture panelTexturePath = new Texture(Gdx.files.internal("Sprites/BoarderSpriteSheet.png"));
+        trainingPanelsTextures = new TextureRegion(panelTexturePath).split(136, 128); //Breaks down the texture into tiles
+
     }
 
     /*
@@ -118,9 +114,6 @@ public class MenuScreen extends ScreenAdapter{
     private void showButtons(){
         menuStage = new Stage(new StretchViewport(WORLD_WIDTH, WORLD_HEIGHT));
         Gdx.input.setInputProcessor(menuStage); //Give power to the menuStage
-
-        //Set up all the buttons used by the stage
-        menuButtons = new ImageButton[3];
 
         setUpMainButtons(); //Places the three main Play|Help|Credits buttons on the screen
         setUpExitButton();  //Palaces the exit button that leaves the Help and Credits menus
@@ -137,10 +130,10 @@ public class MenuScreen extends ScreenAdapter{
         TextureRegion[][] buttonSpriteSheet = new TextureRegion(buttonTexturePath).split(86, 46); //Breaks down the texture into tiles
 
         //Places the three main Play|Help|Credits buttons on the screen
-        for(int i = 0; i < 2; i ++){
+        for(int i = 0; i < 3; i ++){
             menuButtons[i] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[2][0]));
             menuButtons[i].setPosition( 20 + buttonSpriteSheet[0][0].getRegionWidth()/2f,
-                    WORLD_HEIGHT/3 - 60 * i);
+                    WORLD_HEIGHT/3 + 20 - 60 * i);
             menuStage.addActor(menuButtons[i]);
 
             final int finalI = i;
@@ -148,18 +141,28 @@ public class MenuScreen extends ScreenAdapter{
                 @Override
                 public void tap(InputEvent event, float x, float y, int count, int button) {
                     super.tap(event, x, y, count, button);
-                    //playButtonFX();
-                    //Launches the game
-                    if(finalI == 0){
-                        //music.stop();
-                        dispose();
-                        tsr.setScreen(new IntroScreen(tsr, 0));
-                    }
-                    //Turns on the credits menu
-                    else{
-                        //for (ImageButton imageButton : menuButtons) { imageButton.setVisible(false); }
-                        //creditsFlag = true;
-                        //menuButtons[2].setVisible(true);
+                    playButtonFX();
+                    switch (finalI) {
+                        case 0: {
+                            //Load Saved Game
+                            //music.stop();
+                            //dispose();
+                            break;
+                        }
+                        //Launches the game
+                        case 1:{
+                            //music.stop();
+                            dispose();
+                            tsr.setScreen(new IntroScreen(tsr, 0));
+                            break;
+                        }
+                        //Turns on the credits menu
+                        case 2:{
+                            for (ImageButton imageButton : menuButtons) { imageButton.setVisible(false); }
+                            creditsFlag = true;
+                            menuButtons[3].setVisible(true);
+                            break;
+                        }
                     }
                 }
             });
@@ -177,22 +180,21 @@ public class MenuScreen extends ScreenAdapter{
         TextureRegion[][] exitButtonSpriteSheet = new TextureRegion(exitButtonTexturePath).split(45, 44); //Breaks down the texture into tiles
 
         //Places the button and adds it to the stage
-        menuButtons[2] =  new ImageButton(new TextureRegionDrawable(exitButtonSpriteSheet[0][0]), new TextureRegionDrawable(exitButtonSpriteSheet[0][1]));
-        menuButtons[2].setPosition(WORLD_WIDTH - 50, WORLD_HEIGHT - 50);
-        menuButtons[2].setWidth(20);
-        menuButtons[2].setHeight(20);
-        menuStage.addActor(menuButtons[2]);
-        menuButtons[2].setVisible(false);
+        menuButtons[3] =  new ImageButton(new TextureRegionDrawable(exitButtonSpriteSheet[0][0]), new TextureRegionDrawable(exitButtonSpriteSheet[0][1]));
+        menuButtons[3].setPosition(WORLD_WIDTH - 100, WORLD_HEIGHT - 70);
+        menuButtons[3].setWidth(20);
+        menuButtons[3].setHeight(20);
+        menuStage.addActor(menuButtons[3]);
+        menuButtons[3].setVisible(false);
         //If tapped turn of any menu and turn back the main three buttons
-        menuButtons[2].addListener(new ActorGestureListener() {
+        menuButtons[3].addListener(new ActorGestureListener() {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 //playButtonFX();
-                helpFlag = false;
                 creditsFlag = false;
                 for (ImageButton imageButton : menuButtons) { imageButton.setVisible(true); }
-                menuButtons[2].setVisible(false);
+                menuButtons[3].setVisible(false);
             }
         });
     }
@@ -221,10 +223,7 @@ public class MenuScreen extends ScreenAdapter{
     Output: Void
     Purpose: Sets up the font
     */
-    private void showObjects(){
-        //if(dogFighter.getAssetManager().isLoaded("Fonts/GreedyGobo.fnt")){bitmapFont = dogFighter.getAssetManager().get("Fonts/GreedyGobo.fnt");}
-        bitmapFont.getData().setScale(0.6f);
-    }
+    private void showObjects(){ bitmapFont.getData().setScale(0.6f); }
 
 
     /*
@@ -241,25 +240,9 @@ public class MenuScreen extends ScreenAdapter{
     /*
     Input: Void
     Output: Void
-    Purpose: Updates the leaves and gobo's color
+    Purpose: Updates the title size and position
     */
     private void update() {
-        updateTouch();
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Lets user click on gobo to change his color
-    */
-    private void updateTouch(){
-        float touchedY = WORLD_HEIGHT - Gdx.input.getY() * WORLD_HEIGHT / Gdx.graphics.getHeight();
-        float touchedX = Gdx.input.getX() * WORLD_WIDTH / Gdx.graphics.getWidth();
-        if(letGo && Gdx.input.isTouched() && touchedY >= 0 && touchedY <= 150
-                && touchedX >= 300 && touchedX <= WORLD_WIDTH) {
-            letGo = false;
-        }
-        else if(!letGo && !Gdx.input.isTouched()){letGo = true;} //Make sure you only click once
     }
 
     /*
@@ -276,16 +259,14 @@ public class MenuScreen extends ScreenAdapter{
         batch.begin();
         batch.draw(menuScreenTexture, 0, 0);
         //Draw the pop up menu
-        if(helpFlag  || creditsFlag){batch.draw(popUpTexture, 10, 10, WORLD_WIDTH - 20, WORLD_HEIGHT-20);}
+        if(creditsFlag){batch.draw(trainingPanelsTextures[0][0], 10, 10, WORLD_WIDTH-20, WORLD_HEIGHT-20);}
         batch.end();
 
         menuStage.draw(); // Draws the buttons
 
         batch.begin();
-        //Draws the Play|Help|Credits text on buttons
-        if(!helpFlag && !creditsFlag){drawButtonText();}
-        //Draws the Help Text
-        else if(helpFlag){drawHelpScreen();}
+        //Draws the Play|Credits text on buttons
+        if(!creditsFlag){drawButtonText();}
         //Draws the credits text
         else{drawCredits();}
         batch.end();
@@ -304,22 +285,13 @@ public class MenuScreen extends ScreenAdapter{
     /*
     Input: Void
     Output: Void
-    Purpose: Draws the text on the Play|Help|Credits buttons
+    Purpose: Draws the text on the Continue|Play|Credits buttons
     */
     private void drawButtonText(){
         bitmapFont.getData().setScale(1f);
-        for(int i = 0; i < 2; i ++) {
-            centerText(bitmapFont, buttonText[i], 105, WORLD_HEIGHT / 3 + 23 -58 * i);
+        for(int i = 0; i < 3; i ++) {
+            centerText(bitmapFont, buttonText[i], 105, WORLD_HEIGHT / 3 + 43 - 60 * i);
         }
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Draws the help screen
-    */
-    private void drawHelpScreen(){
-
     }
 
     /*
@@ -329,12 +301,12 @@ public class MenuScreen extends ScreenAdapter{
     */
     private void drawCredits(){
         //Title
-        bitmapFont.getData().setScale(0.5f);
-        centerText(bitmapFont, "Credits", WORLD_WIDTH/2f, WORLD_HEIGHT-45);
-        bitmapFont.getData().setScale(0.32f);
+        bitmapFont.getData().setScale(1f);
+        centerText(bitmapFont, "Credits", WORLD_WIDTH/2f, WORLD_HEIGHT-55);
+        bitmapFont.getData().setScale(0.8f);
 
-        centerText(bitmapFont, "Programming & Art", WORLD_WIDTH/2f, WORLD_HEIGHT - 80);
-        centerText(bitmapFont, "########", WORLD_WIDTH/2f, WORLD_HEIGHT - 95);
+        centerText(bitmapFont, "Programming & Art", WORLD_WIDTH/2f, WORLD_HEIGHT - 75);
+        centerText(bitmapFont, "Sebastian Grygorczuk", WORLD_WIDTH/2f, WORLD_HEIGHT - 90);
 
         centerText(bitmapFont, "Music", WORLD_WIDTH/2f, WORLD_HEIGHT - 125);
         centerText(bitmapFont, "########", WORLD_WIDTH/2f, WORLD_HEIGHT - 140);
@@ -349,9 +321,6 @@ public class MenuScreen extends ScreenAdapter{
         centerText(bitmapFont, "########", WORLD_WIDTH/2f - 120, WORLD_HEIGHT - 230);
         centerText(bitmapFont, "########", WORLD_WIDTH/2f, WORLD_HEIGHT - 230);
         centerText(bitmapFont, "########", WORLD_WIDTH/2f + 120, WORLD_HEIGHT - 230);
-
-        centerText(bitmapFont, "Font - ########", WORLD_WIDTH/2f, WORLD_HEIGHT - 255);
-        centerText(bitmapFont, "########", WORLD_WIDTH/2f, WORLD_HEIGHT - 275);
     }
 
     /*
@@ -375,7 +344,7 @@ public class MenuScreen extends ScreenAdapter{
     public void dispose() {
         menuStage.dispose();
 
-        popUpTexture.dispose();
+        menuScreenTexture.dispose();
     }
 
 
