@@ -224,7 +224,7 @@ class MainScreen extends ScreenAdapter {
                         case 0: {
                             currencies[0] = currencies[0] + 1 + 2 * stage;
                             for (int i = 0; i < 1 + 2 * stage; i++) {
-                                createCoin(0);
+                                createCoin(0, 0);
                             }
                             break;
                         }
@@ -298,7 +298,7 @@ class MainScreen extends ScreenAdapter {
     */
     private void clickerButtonAction(int gainCoin, int cost){
         /* Will spawn 1, 3, or 5 Coin tokens depending on stage */
-        for(int i = 0; i < 1 + 2 * stage; i++){createCoin(gainCoin);}
+        for(int i = 0; i < 1 + 2 * stage; i++){createCoin(gainCoin, gainCoin);}
         currencies[0] -= cost;
         currencies[gainCoin] += 1 + 2 * stage;
     }
@@ -312,7 +312,7 @@ class MainScreen extends ScreenAdapter {
     */
     private void clickerButtonAction(int coinCostOne, int coinCostTwo, int gainCoin){
         /* Will spawn 1, 3, or 5 Coin tokens depending on stage */
-        for(int i = 0; i < 1 + 2 * stage; i++){createCoin(gainCoin);}
+        for(int i = 0; i < 1 + 2 * stage; i++){createCoin(gainCoin, gainCoin);}
         currencies[coinCostOne] -= 10;
         currencies[coinCostTwo] -= 5;
         currencies[gainCoin] += 1 + 2 * stage;
@@ -381,8 +381,11 @@ class MainScreen extends ScreenAdapter {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                currencies[endGameState] -= 1000;
-                endGameState++;
+                if(endGameState < 4) {
+                    currencies[endGameState] -= 1000;
+                    for(int i = 0; i < 250; i++){ createCoin(endGameState, 5); }
+                    endGameState++;
+                }
             }
         });
 
@@ -538,7 +541,7 @@ class MainScreen extends ScreenAdapter {
             for (int j = 0; j < autoCoins.length; j++) {
                 //If autoCoin[0] = 2, will create two coin tokens and increase the value but 1 each time
                 for (int i = 0; i < autoCoins[j]; i++){
-                    createCoin(j);
+                    createCoin(j,j);
                     currencies[j]++;
                 }
             }
@@ -606,43 +609,42 @@ class MainScreen extends ScreenAdapter {
     Output: Void
     Purpose: Creates a coin given the choice
     */
-    private void createCoin(int coinChoice){
-        Sprite coin;
-        switch (coinChoice){
+    private void createCoin(int coinChoice, int placement){
+        Sprite coin = new Sprite(symbolTextures[0][coinChoice]);
+        switch (placement){
             //Will
             case 0:{
-                //Make the image into a texture
-                coin = new Sprite(symbolTextures[0][0]);
                 //Give it a random position in chosen ranges
                 coin.setPosition(MathUtils.random(160, 190), MathUtils.random(190, 210));
                 break;
             }
             //Stamina
             case 1:{
-                coin = new Sprite(symbolTextures[0][1]);
                 coin.setPosition(MathUtils.random(70, 90), MathUtils.random(110, 130));
                 break;
             }
             //Strength
             case 2:{
-                coin = new Sprite(symbolTextures[0][2]);
                 coin.setPosition(MathUtils.random(260, 290), MathUtils.random(120, 140));
                 break;
             }
             //Agility
             case 3:{
-                coin = new Sprite(symbolTextures[0][3]);
                 coin.setPosition(MathUtils.random(70, 90), MathUtils.random(250, 270));
                 break;
             }
             //Study
             case 4:{
-                coin = new Sprite(symbolTextures[0][4]);
                 coin.setPosition(MathUtils.random(260, 290), MathUtils.random(230, 250));
                 break;
             }
+            //Strike
+            case 5:{
+                coin.setPosition(MathUtils.random(0, 90), MathUtils.random(-30, 50));
+                break;
+            }
             default:
-                throw new IllegalStateException("Unexpected value: " + coinChoice);
+                throw new IllegalStateException("Unexpected value: " + placement);
         }
         //Add coin sprite
         coins.add(coin);

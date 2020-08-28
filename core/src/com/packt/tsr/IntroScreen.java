@@ -42,11 +42,11 @@ public class IntroScreen extends ScreenAdapter{
     //Logo that's displayed when the game first loads
     private TextureRegion[][] intoPanelTextures;
 
-    int panelCounter = 0;
-    int sizeCount = 0;
-    boolean letGo = true;
-    int stage;
-    boolean continueEnd = false;
+    int panelCounter = 0;           //Keeps track of which panel we're looking at
+    int sizeCount = 0;              //Keeps track of how many letters to display
+    boolean letGo = true;           //Checks if the user has touched the screen
+    int stage;                      //Tells us which paneles to display
+    boolean continueEnd = false;    //Only used in last cut scene to tell us to keep the cut scene going
 
     /*
     Input: SpaceHops
@@ -207,7 +207,7 @@ public class IntroScreen extends ScreenAdapter{
         //Sends the user to the main game screen
         if(stage == 0 && panelCounter == 8){
             dispose();
-            tsr.setScreen(new MainScreen(tsr, 0));
+            tsr.setScreen(new MainScreen(tsr, 2));
         }
         //Send the user to the forgiveness fight screen
         if(stage == 1 && panelCounter == 7){
@@ -319,15 +319,15 @@ public class IntroScreen extends ScreenAdapter{
         String string = "";
         switch (panelCounter){
             case 0: {
-                string = addNewLine("Again we find an innocent citizen walking down the streets.");
+                string = addNewLine("Again we find an innocent citizen walking down the streets.   ");
                 break;
             }
             case 1:{
-                string = addNewLine("Only to be met with imposing stature of the Bully.\n         ");
+                string = addNewLine("Only to be met with imposing stature of the Bully.\n          ");
                 break;
             }
             case 2:{
-                string = addNewLine("Business as usual give the Bully the stuff or pay the price");
+                string = addNewLine("Business as usual give the Bully the stuff or pay the price.  ");
                 break;
             }
             case 3:{
@@ -343,7 +343,7 @@ public class IntroScreen extends ScreenAdapter{
                 break;
             }
             case 6: {
-                string = addNewLine("It was time to unleash his final form!\n                    ");
+                string = addNewLine("It was time to unleash his final form!\n                     ");
                 break;
             }
         }

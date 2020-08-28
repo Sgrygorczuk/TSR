@@ -42,6 +42,7 @@ public class FightScreen extends ScreenAdapter{
     //Logo that's displayed when the game first loads
     private TextureRegion[][] intoPanelTextures;
     private TextureRegion[][] fightPanelTextures;
+    private TextureRegion[][] transitionTextures;
     private TextureRegion[][] winPanelTextures;
     private Texture lifeBarTexture;
     private Texture bloodTexture;
@@ -58,6 +59,7 @@ public class FightScreen extends ScreenAdapter{
     float fatBuddyAlpha = 1;
     float thinBuddyAlpha = 0;
     boolean stageTwoNewBodyFlag = false;
+    boolean transitionFlag = false;
     int stage;
 
     //Timing variable used to stop the abbot bounce effect from stacking
@@ -117,6 +119,7 @@ public class FightScreen extends ScreenAdapter{
         //Set up deafult paths
         Texture  introTexturePath = new Texture(Gdx.files.internal("Sprites/VSBagSpriteSheet.png"));
         Texture  fightTexturePath = new Texture(Gdx.files.internal("Sprites/BagHitSpriteSheet.png"));
+        Texture  transitionTexturePath = new Texture(Gdx.files.internal("Sprites/MasterTranstion.png"));
         Texture  winTexturePath = new Texture(Gdx.files.internal("Sprites/BagWinSpriteSheet.png"));
 
         Texture buddyTexturePath = new Texture(Gdx.files.internal("Sprites/TransformSpriteSheet.png"));
@@ -149,6 +152,7 @@ public class FightScreen extends ScreenAdapter{
             case 3:{
                 introTexturePath = new Texture(Gdx.files.internal("Sprites/VsBullyTwo.png"));
                 fightTexturePath = new Texture(Gdx.files.internal("Sprites/BullyFightSpriteSheetTwo_One.png"));
+                transitionTexturePath  = new Texture(Gdx.files.internal("Sprites/BullyTransmission.png"));
                 winTexturePath = new Texture(Gdx.files.internal("Sprites/GoodguyWin.png"));
                 fatBuddy = new Sprite(buddyTextures[0][2]);
                 thinBuddy = new Sprite(buddyTextures[0][4]);
@@ -158,6 +162,7 @@ public class FightScreen extends ScreenAdapter{
 
         intoPanelTextures = new TextureRegion(introTexturePath).split(480, 320); //Breaks down the texture into tiles
         fightPanelTextures = new TextureRegion(fightTexturePath).split(480, 320); //Breaks down the texture into tiles
+        transitionTextures = new TextureRegion(transitionTexturePath).split(480, 320);
         winPanelTextures = new TextureRegion(winTexturePath).split(480, 320); //Breaks down the texture into tiles
 
         fatBuddy.setAlpha(1);
@@ -214,7 +219,10 @@ public class FightScreen extends ScreenAdapter{
                 timeCounter = 0;
 
                 if(stage == 1 && life == 5 && !stageTwoNewBodyFlag || stage == 3 && life == 5 && !stageTwoNewBodyFlag){
-                    life = 31;
+                    currentFrame = 0;
+                    transitionFlag = true;
+                    life = 30;
+                    menuButtons[0].setVisible(false);
                     Texture fightTexturePath;
                     if(stage == 1){fightTexturePath = new Texture(Gdx.files.internal("Sprites/MasterFigthSpriteSheetTwo.png"));}
                     else{fightTexturePath = new Texture(Gdx.files.internal("Sprites/BullyFightSpriteSheetTwo_Two.png"));}
@@ -261,8 +269,6 @@ public class FightScreen extends ScreenAdapter{
         if (frameTimer <= 0) {
             frameTimer = FRAME_TIME;
 
-            if(stage == 1 && life == 31){ life--; }
-
             if(levelState == 0){
                 if(timeCounter < 6) {
                     if (currentFrame == 0) { currentFrame++; }
@@ -278,19 +284,29 @@ public class FightScreen extends ScreenAdapter{
             }
             else if(levelState == 1){
                 timeCounter++;
-                if(timeCounter == 2){
-                    timeCounter = 0;
-                    currentFrame = 0;
+                if(timeCounter >= 2){
+                    if(transitionFlag && timeCounter > 2){
+                        if(currentFrame < 3){currentFrame++;}
+                        if(currentFrame == 3){
+                            transitionFlag = false;
+                            menuButtons[0].setVisible(true);
+                            menuButtons[0].setPosition(350, 60);
+                            timeCounter = 2;
+                            currentFrame = 0;
+                        }
+                    }
+                    else if(!transitionFlag && timeCounter == 2) {
+                        timeCounter = 0;
+                        currentFrame = 0;
+                    }
                 }
             }
             else if(levelState == 2){
                 timeCounter++;
-                if(timeCounter > 4) {
-                    if (currentFrame < 4) {
-                        currentFrame++;
-                        timeCounter = 0;
-                    }
-                    if(currentFrame == 3){levelState = 3;}
+                if(timeCounter > 2) {
+                    currentFrame++;
+                    timeCounter = 0;
+                    if(currentFrame == 3 && stage < 2 || currentFrame == 5 && stage == 3){levelState = 3;}
                 }
             }
             else{
@@ -300,7 +316,7 @@ public class FightScreen extends ScreenAdapter{
                     fatBuddyAlpha -= 0.1f;
                     timeCounter = 0;
                 }
-                else if(timeCounter == 2){
+                else if(timeCounter == 7){
                     dispose();
                     if(stage < 2){tsr.setScreen(new MainScreen(tsr, stage+1));}
                     else{tsr.setScreen(new MenuScreen(tsr));}
@@ -331,13 +347,18 @@ public class FightScreen extends ScreenAdapter{
                 break;
             }
             case 1: {
-                batch.draw(fightPanelTextures[currentFrame][0], 0, 0);
-                batch.draw(bloodTexture, WORLD_WIDTH / 2f - bloodTexture.getWidth() / 2f, WORLD_HEIGHT - 45, bloodTexture.getWidth() * life / 30f, bloodTexture.getHeight());
-                batch.draw(lifeBarTexture, WORLD_WIDTH / 2f - bloodTexture.getWidth() / 2f - 9, WORLD_HEIGHT - 52);
+                if(transitionFlag && currentFrame < 3) {
+                    batch.draw(transitionTextures[currentFrame][0], 0, 0);
+                }
+                else {
+                    if(currentFrame < 3){batch.draw(fightPanelTextures[currentFrame][0], 0, 0);}
+                    batch.draw(bloodTexture, WORLD_WIDTH / 2f - bloodTexture.getWidth() / 2f, WORLD_HEIGHT - 43, bloodTexture.getWidth() * life / 30f, bloodTexture.getHeight());
+                    batch.draw(lifeBarTexture, WORLD_WIDTH / 2f - bloodTexture.getWidth() / 2f - 10, WORLD_HEIGHT - 52);
+                }
                 break;
             }
             case 2: {
-                if (currentFrame < 3) {
+                if (currentFrame < 3 && stage < 2 || currentFrame < 5 && stage == 3) {
                     batch.draw(winPanelTextures[currentFrame][0], 0, 0);
                 }
                 break;
@@ -362,25 +383,25 @@ public class FightScreen extends ScreenAdapter{
     private void drawText(){
         bitmapFont.getData().setScale(1f);
         String string = "";
-        if(fatBuddyAlpha > 0) {
+        if(fatBuddyAlpha >= 0) {
             string = addNewLine("Something is happening to Buddy?!");
         }
         else{
             switch (stage){
                 case 0:{
-                    string = addNewLine("Buddy made mad gains.");
+                    string = addNewLine("Buddy made mad gains. Now he needs to learn how to fight!");
                     break;
                 }
                 case 1:{
-                    string = addNewLine("Buddy has ascended!");
+                    string = addNewLine("Buddy has ascended! He feels a strange power inside of him.");
                     break;
                 }
                 case 2:{
-                    string = addNewLine("Buddy has become the Bully!");
+                    string = addNewLine("Buddy has become the Bully! Now he owns this block.");
                     break;
                 }
                 case 3:{
-                    string = addNewLine("Buddy and Bully have become friends. Buddy has become a hero!");
+                    string = addNewLine("Bully has been placed and jail, and Buddy visits him to see how his rehabilitation is going. Buddy has become a hero!");
                     break;
                 }
             }
