@@ -2,6 +2,8 @@ package com.packt.tsr;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -35,6 +37,12 @@ public class FightScreen extends ScreenAdapter{
 
     //The game object that keeps track of the settings
     private TSR tsr;
+
+    private Music music;
+    private Sound punchOneSFX;
+    private Sound punchTwoSFX;
+    private Sound victorySFX;
+    private Sound laserSFX;
 
     //Font used to write in
     private BitmapFont bitmapFont = new BitmapFont();
@@ -95,6 +103,7 @@ public class FightScreen extends ScreenAdapter{
         showCamera();           //Sets up camera through which objects are draw through
         loadAssets();           //Loads the stuff into the asset manager
         setUpButtons();
+        if(tsr.getSFXVolume()){setMusic("Music/VsMusic.wav", 0.5f);}
     }
 
 
@@ -190,12 +199,13 @@ public class FightScreen extends ScreenAdapter{
         menuStage.addActor(menuButtons[0]);
         menuButtons[0].setVisible(false);
 
-        //If button has not been clicked turn on menu and pause game,
-        //If the menu is up turn it off and un-pause the game
         menuButtons[0].addListener(new ActorGestureListener() {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
+
+                if(stage == 3 && stageTwoNewBodyFlag){playLaserSFX();}
+                else{ playPunchSFX();}
 
                 if(life > 20){
                     if(menuButtons[0].getX() == 40) {
@@ -215,6 +225,7 @@ public class FightScreen extends ScreenAdapter{
                     if(currentFrame < 2){currentFrame++;}
                     else{currentFrame = 1;}
                 }
+
                 if(life > 0){life--;}
                 timeCounter = 0;
 
@@ -237,6 +248,50 @@ public class FightScreen extends ScreenAdapter{
             }
         });
     }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the music that will play when screen is started
+    */
+    private void setMusic(String soundName, float volume){
+        music = tsr.getAssetManager().get(soundName, Music.class);
+        music.setVolume(volume);
+        music.setLooping(true);
+        music.play();
+
+        punchOneSFX = tsr.getAssetManager().get("SFX/PunchOne.wav", Sound.class);
+        punchTwoSFX = tsr.getAssetManager().get("SFX/PunchTwo.wav", Sound.class);
+        victorySFX  = tsr.getAssetManager().get("SFX/Victory.wav", Sound.class);
+        laserSFX  = tsr.getAssetManager().get("SFX/Laser.wav", Sound.class);
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: SFX will play when player is punching
+    */
+    private void playPunchSFX() {
+        if(tsr.getSFXVolume()) {
+        if (currentFrame == 1) { punchOneSFX.play(); }
+        else if (currentFrame == 2 || currentFrame == 0) { punchTwoSFX.play(); }
+      }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: SFX will play when Buddy transforms
+    */
+    private void playVictorySFX() {if(tsr.getSFXVolume()){ victorySFX.play(); }}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: SFX will play when Buddy transforms
+    */
+    private void playLaserSFX() {if(tsr.getSFXVolume()){ laserSFX.play(); }}
+
 
     /*
     Input: Delta, timing
@@ -276,6 +331,10 @@ public class FightScreen extends ScreenAdapter{
                     timeCounter++;
                 }
                 else{
+                    if(tsr.getSFXVolume()){
+                        music.stop();
+                        setMusic("Music/FightMusic.wav", 0.3f);
+                    }
                     timeCounter = 0;
                     levelState = 1;
                     currentFrame = 0;
@@ -306,15 +365,23 @@ public class FightScreen extends ScreenAdapter{
                 if(timeCounter > 2) {
                     currentFrame++;
                     timeCounter = 0;
-                    if(currentFrame == 3 && stage < 2 || currentFrame == 5 && stage == 3){levelState = 3;}
+                    if(currentFrame == 3 && stage <=2 || currentFrame == 5 && stage == 3){levelState = 3;}
                 }
             }
             else{
+                if(tsr.getSFXVolume() && timeCounter == 0 && thinBuddyAlpha == 0) {
+                    music.stop();
+                    setMusic("Music/HeartBeatMusic.wav", 0.8f);
+                }
                 timeCounter++;
                 if(thinBuddyAlpha < 1){
                     thinBuddyAlpha += 0.1f;
                     fatBuddyAlpha -= 0.1f;
                     timeCounter = 0;
+                }
+                else if(timeCounter == 1 && thinBuddyAlpha > 1){
+                    music.stop();
+                    playVictorySFX();
                 }
                 else if(timeCounter == 7){
                     dispose();
@@ -358,7 +425,7 @@ public class FightScreen extends ScreenAdapter{
                 break;
             }
             case 2: {
-                if (currentFrame < 3 && stage < 2 || currentFrame < 5 && stage == 3) {
+                if (currentFrame < 3 && stage <= 2 || currentFrame < 5 && stage == 3) {
                     batch.draw(winPanelTextures[currentFrame][0], 0, 0);
                 }
                 break;
@@ -456,6 +523,10 @@ public class FightScreen extends ScreenAdapter{
     */
     @Override
     public void dispose() {
+
+        menuStage.dispose();
+
+        if(tsr.getSFXVolume()) { music.stop(); }
 
     }
 }

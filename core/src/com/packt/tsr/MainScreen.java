@@ -53,6 +53,9 @@ class MainScreen extends ScreenAdapter {
 
     //Music that will start
     private Music music;
+    private Sound buttonSFX;
+    private Sound bellSFX;
+    private Sound strikeSFX;
 
     //Font used for the user interaction
     private BitmapFont bitmapFont = new BitmapFont();
@@ -90,7 +93,7 @@ class MainScreen extends ScreenAdapter {
     private int endGameState = 0;               //0 Will - 1 Stamina - 2 Strength - 3 Agility
     private boolean techFlag = false;           //Tells us if the auto is unlocked
     private boolean pausedFlag = false;         //Stops the game from updating
-    private float sfxVolume = 1f;               //Current sfx volume
+    private boolean sfxVolume = true;
     private int stage;                          //0 Fat, 1 Skinny, 2 Buff
 
     //Timing variable used to stop the abbot bounce effect from stacking
@@ -98,13 +101,29 @@ class MainScreen extends ScreenAdapter {
     private float autoTimer = AUTO_TIME;
 
     /*
-    Input: SpaceHops
+    Input: TRS, stage tells us which section of game we're in
     Output: Void
     Purpose: Grabs the info from main screen that holds asset manager
     */
     MainScreen(TSR tsr, int stage) {
         this.tsr = tsr;
         this.stage = stage;
+    }
+
+    /*
+    Input: SpaceHops
+    Output: Void
+    Purpose: Grabs the info from main screen that holds asset manager
+    */
+    MainScreen(TSR tsr) {
+        this.tsr = tsr;
+        this.currencies = tsr.getCurrenciesInternal();
+        this.autoCoins = tsr.getAutoCoinsInternal();
+        this.currenciesUnlock = tsr.getCurrenciesUnlockInternal();
+        this.currenciesTextUnlock = tsr.getCurrenciesTextUnlockInternal();
+        this.endGameState = tsr.getEndGameState();
+        this.techFlag = tsr.getTechFlag();
+        this.stage = tsr.getStage();
     }
 
 
@@ -127,7 +146,7 @@ class MainScreen extends ScreenAdapter {
         showTextures();     //Sets up textures
         showObjects();      //Sets up player and font
         showButtons();      //Sets up the buttons
-        //showMusic();        //Sets up music
+        showMusic();        //Sets up music
     }
 
     /*
@@ -219,6 +238,7 @@ class MainScreen extends ScreenAdapter {
                 @Override
                 public void tap(InputEvent event, float x, float y, int count, int button) {
                     super.tap(event, x, y, count, button);
+                    playButtonSFX();
                     //Button to gain Will
                     switch (finalI) {
                         case 0: {
@@ -382,6 +402,7 @@ class MainScreen extends ScreenAdapter {
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 if(endGameState < 4) {
+                    playStrikeSFX();
                     currencies[endGameState] -= 1000;
                     for(int i = 0; i < 250; i++){ createCoin(endGameState, 5); }
                     endGameState++;
@@ -402,6 +423,7 @@ class MainScreen extends ScreenAdapter {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
+                playBellSFX();
                 dispose();
                 //Takes us to Fight Scene if we go from 0->1 and 1->2
                 if(stage < 2){tsr.setScreen(new FightScreen(tsr, stage));}
@@ -420,15 +442,15 @@ class MainScreen extends ScreenAdapter {
         //Gets rid of current button
         menuButtons[1].setVisible(false);
         //Turns the volume down
-        if(sfxVolume == 1f) {
-            //music.stop();
-            sfxVolume = 0;
+        if(sfxVolume) {
+            music.stop();
+            sfxVolume = false;
             menuButtons[1] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][1]), new TextureRegionDrawable(buttonSpriteSheet[0][0]));
         }
         //Turns the sound on
         else{
-            //music.play();
-            sfxVolume = 1;
+            music.play();
+            sfxVolume = true;
             menuButtons[1] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[0][1]));
         }
         //Creates new button in the place of the old one with a different image
@@ -487,18 +509,36 @@ class MainScreen extends ScreenAdapter {
     Purpose: Sets up the music for the level
     */
     private void showMusic(){
-        music = tsr.getAssetManager().get("Music/GoboLevelTheme.wav", Music.class);
-        music.setVolume(0.1f);
+        music = tsr.getAssetManager().get("Music/CutSceneMusic.wav", Music.class);
+        music.setVolume(0.5f);
         music.setLooping(true);
         music.play();
+
+        buttonSFX = tsr.getAssetManager().get("SFX/Button.wav", Sound.class);
+        bellSFX = tsr.getAssetManager().get("SFX/Bell.wav", Sound.class);
+        strikeSFX  = tsr.getAssetManager().get("SFX/Strike.wav", Sound.class);
     }
 
     /*
     Input: Void
     Output: Void
-    Purpose: Plays the sound effect when called
+    Purpose: SFX will play when player is punching
     */
-    private void playButtonSFX() { tsr.getAssetManager().get("SFX/Button.wav", Sound.class).play(1/2f); }
+    private void playButtonSFX() {  if(sfxVolume){buttonSFX.play(); }}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: SFX will play when Buddy transforms
+    */
+    private void playStrikeSFX() { if(sfxVolume){strikeSFX.play(); }}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: SFX will play when Buddy transforms
+    */
+    private void playBellSFX() { if(sfxVolume){bellSFX.play(); }}
 
     /*
     Input: Void
@@ -525,6 +565,9 @@ class MainScreen extends ScreenAdapter {
         updateCoinsMaster();                        //Updates all the coin position and transparency
         updateAutoTimer(delta);                     //Updates when the auto generate coins are made
         updateGameButtonVisibility();               //Updates the visibility of buttons based on resources available
+        //Saves all the info to the main game which will later save that data locally
+        tsr.saveSettingInternal(currencies, autoCoins, currenciesUnlock,
+                currenciesTextUnlock, endGameState, techFlag, stage, true, sfxVolume);
     }
 
     /*
@@ -953,7 +996,7 @@ class MainScreen extends ScreenAdapter {
     private void drawButtonText(){
         bitmapFont.getData().setScale(1);
         String string;
-        if(sfxVolume  == 0){ string = "Sound On";}
+        if(!sfxVolume){ string = "Sound On";}
         else{string = "Sound Off";}
         centerText(bitmapFont, string, 380/2f, 200);
 
@@ -1011,6 +1054,7 @@ class MainScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         menuStage.dispose();
+        music.stop();
 
         gameScreenTexture.dispose();
         progressTexture.dispose();

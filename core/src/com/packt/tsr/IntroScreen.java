@@ -3,6 +3,8 @@ package com.packt.tsr;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -29,6 +31,10 @@ public class IntroScreen extends ScreenAdapter{
     private SpriteBatch batch = new SpriteBatch();			 //Batch that holds all of the textures
     private Viewport viewport;
     private Camera camera;
+
+    //Music player
+    private Music music;
+    private Sound buttonSound;
 
     //The game object that keeps track of the settings
     private TSR tsr;
@@ -77,6 +83,7 @@ public class IntroScreen extends ScreenAdapter{
         showCamera();           //Sets up camera through which objects are draw through
         setUpCutScene();           //Loads the stuff into the asset manager
         setUpButtons();
+        showMusic();
     }
 
     /*
@@ -137,6 +144,7 @@ public class IntroScreen extends ScreenAdapter{
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
+                playButtonSFX();
                 menuButtons[0].setVisible(false);
                 menuButtons[1].setVisible(false);
                 dispose();
@@ -159,6 +167,7 @@ public class IntroScreen extends ScreenAdapter{
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
+                playButtonSFX();
                 menuButtons[0].setVisible(false);
                 menuButtons[1].setVisible(false);
                 continueEnd = true;
@@ -167,6 +176,29 @@ public class IntroScreen extends ScreenAdapter{
         });
 
     }
+
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the music that will play when screen is started
+    */
+    private void showMusic(){
+        music = tsr.getAssetManager().get("Music/CutSceneMusic.wav", Music.class);
+        music.setVolume(0.5f);
+        music.setLooping(true);
+        music.play();
+
+        buttonSound = tsr.getAssetManager().get("SFX/Button.wav", Sound.class);
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: SFX will be played any time a button is clicked
+    */
+    private void playButtonSFX() {buttonSound.play();}
+
 
     /*
     Input: Delta, timing
@@ -207,7 +239,7 @@ public class IntroScreen extends ScreenAdapter{
         //Sends the user to the main game screen
         if(stage == 0 && panelCounter == 8){
             dispose();
-            tsr.setScreen(new MainScreen(tsr, 2));
+            tsr.setScreen(new MainScreen(tsr, 0));
         }
         //Send the user to the forgiveness fight screen
         if(stage == 1 && panelCounter == 7){
@@ -298,7 +330,7 @@ public class IntroScreen extends ScreenAdapter{
                 break;
             }
             case 7:{
-                string = addNewLine("But this was the last time. This time Buddy will get his redemption!");
+                string = addNewLine("But this was the last time. This time Buddy will get his revenge!");
                 break;
             }
         }
@@ -398,5 +430,6 @@ public class IntroScreen extends ScreenAdapter{
     @Override
     public void dispose() {
         menuStage.dispose();
+        music.stop();
     }
 }

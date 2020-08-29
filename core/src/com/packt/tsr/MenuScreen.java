@@ -33,31 +33,35 @@ public class MenuScreen extends ScreenAdapter{
 
     //The buttons used to move around the menus
     private Stage menuStage;
-    private ImageButton[] menuButtons = new ImageButton[4];
+    private ImageButton[] menuButtons = new ImageButton[6];
 
     //Textures
     private Texture menuScreenTexture;    //This is the background
     private TextureRegion[][] trainingPanelsTextures;   //The small panels in which Buddy trains
+    private TextureRegion[][] buttonSpriteSheet;
 
     //String used on the buttons
-    private String[] buttonText = new String[]{"Continue", "Play", "Credits"};
+    private String[] buttonText = new String[]{"Continue", "New Game", "Credits"};
+    private String[] buttonPopUpText = new String[]{"Yes", "No"};
     //Font used to write in
     private BitmapFont bitmapFont = new BitmapFont();
 
     //Music player
     private Music music;
+    private Sound buttonSound;
 
     //Game object that keeps track of settings
     private TSR tsr;
 
     private boolean creditsFlag;   //Tells if credits menu is up or not
+    private boolean popUpFlag;     //Tells user it will start a new save
 
     /*
     Input: SpaceHops
     Output: Void
     Purpose: Grabs the info from main screen that holds asset manager
     */
-    MenuScreen(TSR tsr) { this.tsr = tsr;}
+    MenuScreen(TSR tsr) {this.tsr = tsr; }
 
     /*
     Input: Dimensions
@@ -78,7 +82,7 @@ public class MenuScreen extends ScreenAdapter{
         showCamera();           //Sets up camera through which objects are draw through
         showTextures();         //Sets up the textures
         showButtons();          //Sets up the buttons
-        //showMusic();            //Sets up the music
+        showMusic();            //Sets up the music
         showObjects();          //Sets up the font
     }
 
@@ -104,6 +108,8 @@ public class MenuScreen extends ScreenAdapter{
         Texture panelTexturePath = new Texture(Gdx.files.internal("Sprites/BoarderSpriteSheet.png"));
         trainingPanelsTextures = new TextureRegion(panelTexturePath).split(136, 128); //Breaks down the texture into tiles
 
+        Texture buttonTexturePath = new Texture(Gdx.files.internal("Sprites/ButtonSpriteSheet.png"));
+        buttonSpriteSheet = new TextureRegion(buttonTexturePath).split(86, 46); //Breaks down the texture into tiles
     }
 
     /*
@@ -117,6 +123,7 @@ public class MenuScreen extends ScreenAdapter{
 
         setUpMainButtons(); //Places the three main Play|Help|Credits buttons on the screen
         setUpExitButton();  //Palaces the exit button that leaves the Help and Credits menus
+        setUpNewGameButtons(); //Places the buttons that
     }
 
     /*
@@ -125,10 +132,6 @@ public class MenuScreen extends ScreenAdapter{
     Purpose: Sets main three main Play|Help|Credits buttons on the screen
     */
     private void setUpMainButtons(){
-        //Get the texures of the buttons
-        Texture buttonTexturePath = new Texture(Gdx.files.internal("Sprites/ButtonSpriteSheet.png"));
-        TextureRegion[][] buttonSpriteSheet = new TextureRegion(buttonTexturePath).split(86, 46); //Breaks down the texture into tiles
-
         //Places the three main Play|Help|Credits buttons on the screen
         for(int i = 0; i < 3; i ++){
             menuButtons[i] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[2][0]));
@@ -146,14 +149,25 @@ public class MenuScreen extends ScreenAdapter{
                         case 0: {
                             //Load Saved Game
                             //music.stop();
-                            //dispose();
+                            if(tsr.getOnAndroid()) {
+                                dispose();
+                                tsr.setScreen(new MainScreen(tsr));
+                            }
                             break;
                         }
                         //Launches the game
                         case 1:{
                             //music.stop();
-                            dispose();
-                            tsr.setScreen(new IntroScreen(tsr, 0));
+                            if(!tsr.getGameStarted()) {
+                                dispose();
+                                tsr.setScreen(new IntroScreen(tsr, 0));
+                            }
+                            else{
+                                for (ImageButton imageButton : menuButtons) { imageButton.setVisible(false); }
+                                menuButtons[4].setVisible(true);
+                                menuButtons[5].setVisible(true);
+                                popUpFlag = true;
+                            }
                             break;
                         }
                         //Turns on the credits menu
@@ -166,6 +180,8 @@ public class MenuScreen extends ScreenAdapter{
                     }
                 }
             });
+            //If a game hasn't started make the continue button off
+            if(!tsr.getGameStarted()){menuButtons[0].setVisible(false);}
         }
     }
 
@@ -191,10 +207,12 @@ public class MenuScreen extends ScreenAdapter{
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                //playButtonFX();
+                playButtonFX();
                 creditsFlag = false;
                 for (ImageButton imageButton : menuButtons) { imageButton.setVisible(true); }
                 menuButtons[3].setVisible(false);
+                menuButtons[4].setVisible(false);
+                menuButtons[5].setVisible(false);
             }
         });
     }
@@ -202,13 +220,58 @@ public class MenuScreen extends ScreenAdapter{
     /*
     Input: Void
     Output: Void
+    Purpose: Sets main three main Play|Help|Credits buttons on the screen
+    */
+    private void setUpNewGameButtons(){
+        for(int i = 4; i < 6; i ++){
+            menuButtons[i] =  new ImageButton(new TextureRegionDrawable(buttonSpriteSheet[0][0]), new TextureRegionDrawable(buttonSpriteSheet[2][0]));
+            menuButtons[i].setPosition( WORLD_WIDTH/2 - buttonSpriteSheet[0][0].getRegionWidth() + 1.5f * buttonSpriteSheet[0][0].getRegionWidth() * (i-4), WORLD_HEIGHT/2 - buttonSpriteSheet[0][0].getRegionHeight());
+            menuButtons[i].setVisible(false);
+            menuStage.addActor(menuButtons[i]);
+
+            final int finalI = i;
+            menuButtons[i].addListener(new ActorGestureListener() {
+                @Override
+                public void tap(InputEvent event, float x, float y, int count, int button) {
+                    super.tap(event, x, y, count, button);
+                    playButtonFX();
+                    switch (finalI) {
+                        case 4: {
+                            dispose();
+                            tsr.setScreen(new IntroScreen(tsr, 0));
+                            break;
+                        }
+                        //Launches the game
+                        case 5: {
+                            for (ImageButton imageButton : menuButtons) { imageButton.setVisible(true); }
+                            menuButtons[3].setVisible(false);
+                            menuButtons[4].setVisible(false);
+                            menuButtons[5].setVisible(false);
+                            popUpFlag = false;
+                            break;
+                        }
+                    }
+                }
+            });
+            //If a game hasn't started make the continue button off
+            if(!tsr.getGameStarted()){menuButtons[0].setVisible(false);}
+        }
+    }
+
+
+
+    /*
+    Input: Void
+    Output: Void
     Purpose: Sets up the music that will play when screen is started
     */
     private void showMusic(){
-        music = tsr.getAssetManager().get("Music/GoboMainMenuTheme.wav", Music.class);
-        music.setVolume(0.1f);
+        music = tsr.getAssetManager().get("Music/MenuMusic.wav", Music.class);
+        music.setVolume(0.5f);
         music.setLooping(true);
         music.play();
+
+        buttonSound = tsr.getAssetManager().get("SFX/Button.wav", Sound.class);
     }
 
     /*
@@ -216,7 +279,7 @@ public class MenuScreen extends ScreenAdapter{
     Output: Void
     Purpose: SFX will be played any time a button is clicked
     */
-    private void playButtonFX() { tsr.getAssetManager().get("SFX/Button.wav", Sound.class).play(1/2f); }
+    private void playButtonFX() {buttonSound.play();}
 
     /*
     Input: Void
@@ -258,17 +321,20 @@ public class MenuScreen extends ScreenAdapter{
         //Batch setting up texture before drawing buttons
         batch.begin();
         batch.draw(menuScreenTexture, 0, 0);
+        if(!popUpFlag && tsr.getOnAndroid()){batch.draw(buttonSpriteSheet[2][0],20 + buttonSpriteSheet[0][0].getRegionWidth()/2f, WORLD_HEIGHT/3 + 20);}
         //Draw the pop up menu
         if(creditsFlag){batch.draw(trainingPanelsTextures[0][0], 10, 10, WORLD_WIDTH-20, WORLD_HEIGHT-20);}
+        else if(popUpFlag){batch.draw(trainingPanelsTextures[0][0], WORLD_WIDTH/2f - 160, WORLD_HEIGHT/2f - 100, 350, 200);}
         batch.end();
 
         menuStage.draw(); // Draws the buttons
 
         batch.begin();
         //Draws the Play|Credits text on buttons
-        if(!creditsFlag){drawButtonText();}
+        if(!creditsFlag && !popUpFlag){drawButtonText();}
         //Draws the credits text
-        else{drawCredits();}
+        else if(creditsFlag){drawCredits();}
+        else{drawPopUpText();}
         batch.end();
     }
 
@@ -288,8 +354,10 @@ public class MenuScreen extends ScreenAdapter{
     Purpose: Draws the text on the Continue|Play|Credits buttons
     */
     private void drawButtonText(){
-        bitmapFont.getData().setScale(1f);
+        bitmapFont.getData().setScale(0.85f);
         for(int i = 0; i < 3; i ++) {
+            if(i == 0 && !tsr.getGameStarted()){bitmapFont.setColor(Color.GRAY);}
+            else{bitmapFont.setColor(Color.WHITE);}
             centerText(bitmapFont, buttonText[i], 105, WORLD_HEIGHT / 3 + 43 - 60 * i);
         }
     }
@@ -323,6 +391,15 @@ public class MenuScreen extends ScreenAdapter{
         centerText(bitmapFont, "########", WORLD_WIDTH/2f + 120, WORLD_HEIGHT - 230);
     }
 
+    private void drawPopUpText() {
+        bitmapFont.getData().setScale(0.8f);
+        centerText(bitmapFont, addNewLine("Starting a new game will delete all your current progress. Do you wish to continue?"), WORLD_WIDTH/2f + 20, WORLD_HEIGHT/2f + 40);
+        bitmapFont.getData().setScale(1f);
+        for(int i = 0; i < 2; i ++) {
+            centerText(bitmapFont, buttonPopUpText[i],  WORLD_WIDTH/2 - buttonSpriteSheet[0][0].getRegionWidth() + 1.5f * buttonSpriteSheet[0][0].getRegionWidth() * (i) + 40, WORLD_HEIGHT/2 - buttonSpriteSheet[0][0].getRegionHeight() + 22);
+        }
+    }
+
     /*
     Input: BitmapFont for size and font of text, string the text, and x and y for position
     Output: Void
@@ -334,6 +411,23 @@ public class MenuScreen extends ScreenAdapter{
         bitmapFont.draw(batch, string,  x - glyphLayout.width/2, y + glyphLayout.height/2);
     }
 
+    /*
+    Input: The given string, length - how many chars do we go till we start a new line
+    Output: Void
+    Purpose: This function take a string and adds a new line whenever it reaches the length between it's starting position andlengtht,
+    if start + length happens to occur on a non space char it goes back to the nearest space char
+    */
+    private String addNewLine(String str){
+        int spaceFound;
+        for (int j = 0; 60 * (j + 1) + j*3 < str.length(); j++) {
+            //Finds the new position of where a " " occurs
+            spaceFound = str.lastIndexOf(" ", 50 * (j + 1) + j*3) + 1;
+            //Adds in a new line if this is not the end of the string
+            if(str.length() >= spaceFound + 1){ str = str.substring(0, spaceFound) + "\n" + str.substring(spaceFound);}
+        }
+        return str;
+    }
+
 
     /*
     Input: Void
@@ -343,6 +437,7 @@ public class MenuScreen extends ScreenAdapter{
     @Override
     public void dispose() {
         menuStage.dispose();
+        music.stop();
 
         menuScreenTexture.dispose();
     }

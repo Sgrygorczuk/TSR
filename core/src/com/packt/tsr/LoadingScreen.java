@@ -86,12 +86,20 @@ public class LoadingScreen extends ScreenAdapter{
         logoTexture = new Texture(Gdx.files.internal("Sprites/Logo.png"));
 
         //Loading the music
-        /*
-        dogFighter.getAssetManager().load("Music/GoboLevelTheme.wav", Music.class);
-        */
+        tsr.getAssetManager().load("Music/MenuMusic.wav", Music.class);
+        tsr.getAssetManager().load("Music/VsMusic.wav", Music.class);
+        tsr.getAssetManager().load("Music/HeartBeatMusic.wav", Music.class);
+        tsr.getAssetManager().load("Music/FightMusic.wav", Music.class);
+        tsr.getAssetManager().load("Music/CutSceneMusic.wav", Music.class);
 
         //Loading all of the SFX
         tsr.getAssetManager().load("SFX/Button.wav", Sound.class);
+        tsr.getAssetManager().load("SFX/Bell.wav", Sound.class);
+        tsr.getAssetManager().load("SFX/Strike.wav", Sound.class);
+        tsr.getAssetManager().load("SFX/PunchOne.wav", Sound.class);
+        tsr.getAssetManager().load("SFX/PunchTwo.wav", Sound.class);
+        tsr.getAssetManager().load("SFX/Victory.wav", Sound.class);
+        tsr.getAssetManager().load("SFX/Laser.wav", Sound.class);
 
 
     }
