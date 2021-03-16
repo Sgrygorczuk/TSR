@@ -12,7 +12,7 @@ Screenshots:
 
 
 Video: 
--
+-[Thousand Strike Revenge Gameplay](https://www.youtube.com/watch?v=AsU-AgujNOI)
 
 Controls:
     Tap the screens and buttons 
