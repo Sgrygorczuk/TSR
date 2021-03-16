@@ -9,7 +9,7 @@ Play:
 
 Screenshots:
 
-<img src=https://img.itch.zone/aW1hZ2UvNzM2MTE2LzQxNDgzMjkuanBn/347x500/ofrsei.jpg" width="400">
+<img src="https://img.itch.zone/aW1hZ2UvNzM2MTE2LzQxNDgzMjkuanBn/347x500/ofrsei.jpg" width="400">
 <img src="https://img.itch.zone/aW1hZ2UvNzM2MTE2LzQxNDgzMjguanBn/347x500/PT2wPc.jpg" width="400">
 <img src="https://img.itch.zone/aW1hZ2UvNzM2MTE2LzQxMjk0NjIuanBn/347x500/L57vj2.jpg" width="400">
 
