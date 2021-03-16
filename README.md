@@ -1,5 +1,3 @@
-![Thousand Strike Revenge](https://img.itch.zone/aW1hZ2UvNzM2MTE2LzQxMjk0NjMuanBn/347x500/WSZQk7.jpg)
-
 Thousand Strike Revenge is an idle clicker which allows you to help Buddy on his journey to self improvement to either get revenge on the local Bully or become the hero the neighborhood needs. 
 
 Play:
